@@ -20,7 +20,7 @@
   </style>
   <h2 class="build">How the demo fits together</h2>
   <div class="tiers">
-    <div class="lab"><b>Google ADK</b><span>The agent framework</span></div>
+    <div class="lab"><b>AWS Bedrock</b><span>The agent framework</span></div>
     <div class="top">Grocery Shopping Agent: agent loop, tools, session, 3 callbacks</div>
 
     <div class="spacer" data-in="1"></div>
@@ -35,15 +35,15 @@
     <div class="spacer" data-in="5"></div>
     <div class="link" data-in="5"><i></i><span>All data in</span></div>
     <div class="lab" data-in="5"><b>MongoDB Atlas</b><span>Your own cluster</span></div>
-    <div class="tier solid" data-in="5"><div class="c">Memories<span>Written by Agent Engine</span></div><div class="c">Products<span>Searched by ADK tools</span></div><div class="c">Carts &amp; plans<span>Written by ADK tools</span></div></div>
+    <div class="tier solid" data-in="5"><div class="c">Memories<span>Written by Agent Engine</span></div><div class="c">Products<span>Searched by agent tools</span></div><div class="c">Carts &amp; plans<span>Written by agent tools</span></div></div>
   </div>
-  <aside class="notes">ADK owns the loop; three callbacks call Agent Engine. Clicks 2–4 light up record_turn, extraction, build_context. Everything lands in your own Atlas cluster.</aside>
+  <aside class="notes">Bedrock runs the model and tool loop; three callbacks call Agent Engine. Clicks 2–4 light up record_turn, extraction, build_context. Everything lands in your own Atlas cluster.</aside>
   <script type="application/json" class="trace">{
-    "0":[["composer","render slide 12 · demo architecture"],["session","google.adk Agent(\"grocery-agent\") · tools: plan_meal, search_products, add_to_cart"]],
-    "1":[["session","register callbacks: after_model_callback, after_agent_callback, before_model_callback"]],
-    "2":[["session","after_model_callback → agent_engine.record_turn(session_id, turn)"]],
-    "3":[["extractor","after_agent_callback → extraction queued · runs async on snapshot"]],
-    "4":[["retriever","before_model_callback → build_context(query) → memories injected into prompt"]],
-    "5":[["consolidator","writes → atlas.agent_memory.memories","ok"],["retriever","ADK tools → atlas.grocery.products · carts · plans","ok"]]
+    "0":[["composer","render slide 12 · demo architecture"],["session","bedrock.converse(\"grocery-agent\") · tools: plan_meal, search_products, add_to_cart"]],
+    "1":[["session","register callbacks: on_model_response, on_turn_complete, on_model_request"]],
+    "2":[["session","on_model_response → agent_engine.record_turn(session_id, turn)"]],
+    "3":[["extractor","on_turn_complete → extraction queued · runs async on snapshot"]],
+    "4":[["retriever","on_model_request → build_context(query) → memories injected into prompt"]],
+    "5":[["consolidator","writes → atlas.agent_memory.memories","ok"],["retriever","agent tools → atlas.grocery.products · carts · plans","ok"]]
   }</script>
 </section>
