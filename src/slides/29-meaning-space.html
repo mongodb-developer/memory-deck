@@ -1,0 +1,49 @@
+<section class="slide s-mean" data-title="Meaning space">
+  <style>
+    .s-mean .row{display:grid;grid-template-columns:600px 1fr;gap:50px;align-items:start}
+    .s-mean .lead{font-size:30px;line-height:1.35;margin:20px 0 34px}
+    .s-mean .vecs{border:1px solid var(--green);background:rgba(0,237,100,.06);border-radius:6px;padding:20px 24px;font:400 21px/1.9 var(--mono);white-space:pre}
+    .s-mean .vecs .dot{color:var(--green)} .s-mean .vecs .dot.q{color:var(--blue)}
+    .s-mean .vecs .v{color:var(--muted)}
+    .s-mean .space{border:1px solid var(--line2);border-radius:6px;height:500px;position:relative;background:var(--panel)}
+    .s-mean .space .ttl{position:absolute;top:14px;left:0;right:0;text-align:center;font:400 26px var(--display);color:#cfd8dc;letter-spacing:.5px}
+    .s-mean svg{position:absolute;inset:0;width:100%;height:100%}
+    .s-mean svg text{font:700 22px var(--body)}
+    .s-mean .pt[data-in]{transform:translate(var(--dx),var(--dy));opacity:0;transition:transform 1s cubic-bezier(.2,.8,.2,1),opacity .4s}
+    .s-mean .pt[data-in].on{transform:none;opacity:1}
+    .s-mean .ring[data-in]{transform:none;transform-origin:430px 140px;transform-box:view-box;scale:.6;transition:opacity .4s,scale .5s}
+    .s-mean .ring[data-in].on{scale:1}
+  </style>
+  <h2 class="build">Vector embeddings capture meaning</h2>
+  <div class="row">
+    <div>
+      <div class="lead" data-in="0">Similar terms have vectors that are positioned close together in the vector space.</div>
+      <div class="vecs"><span data-in="1"><span class="dot q">●</span> “weekend”         <span class="v">[0.12, -0.48, 0.91, …]</span></span>
+<span data-in="2"><span class="dot">●</span> “Saturday”        <span class="v">[0.14, -0.45, 0.88, …]</span></span>
+<span data-in="2"><span class="dot">●</span> “Sunday”          <span class="v">[0.10, -0.51, 0.86, …]</span></span>
+<span data-in="2"><span class="dot">●</span> “end of the week” <span class="v">[0.17, -0.42, 0.84, …]</span></span></div>
+    </div>
+    <div class="space">
+      <div class="ttl">MEANING SPACE</div>
+      <svg viewBox="0 0 870 500">
+        <g class="ring" data-in="3"><ellipse cx="415" cy="190" rx="345" ry="115" fill="none" stroke="#00A35C" stroke-width="2"/>
+          <text x="80" y="330" fill="#cfd8dc" style="font:400 21px var(--body)">close = similar meaning</text></g>
+        <g class="pt" data-in="1" style="--dx:0px;--dy:30px"><circle cx="360" cy="200" r="15" fill="#3BC4F2"/><text x="290" y="160" fill="#3BC4F2">“weekend”</text></g>
+        <g class="pt" data-in="2" style="--dx:260px;--dy:240px"><circle cx="520" cy="130" r="11" fill="#00ED64"/><text x="542" y="138" fill="#00ED64">Saturday</text></g>
+        <g class="pt" data-in="2" style="--dx:-90px;--dy:220px"><circle cx="180" cy="230" r="11" fill="#00ED64"/><text x="202" y="238" fill="#00ED64">Sunday</text></g>
+        <g class="pt" data-in="2" style="--dx:200px;--dy:-120px"><circle cx="470" cy="238" r="11" fill="#00ED64"/><text x="492" y="246" fill="#00ED64">end of the week</text></g>
+        <g class="pt" data-in="4" style="--dx:-300px;--dy:-260px"><circle cx="640" cy="390" r="11" fill="#FFC010"/><text x="662" y="398" fill="#FFC010">matcha</text></g>
+        <g class="pt" data-in="4" style="--dx:-260px;--dy:-300px"><circle cx="690" cy="440" r="11" fill="#FFC010"/><text x="712" y="448" fill="#FFC010">wet grass</text></g>
+        <g class="pt" data-in="4" style="--dx:-200px;--dy:-240px"><circle cx="590" cy="425" r="11" fill="#FFC010"/><text x="510" y="463" fill="#FFC010">dirt</text></g>
+      </svg>
+    </div>
+  </div>
+  <aside class="notes">Saturday, Sunday and “end of the week” land right next to “weekend”. Matcha, wet grass and dirt are close to each other — and far from the weekend.</aside>
+  <script type="application/json" class="trace">{
+    "0":[["composer","render slide 29 · projecting 1024 dims → 2D for display"]],
+    "1":[["retriever","plot(\"weekend\") · query vector"]],
+    "2":[["retriever","$vectorSearch near \"weekend\" → Saturday 0.94 · Sunday 0.92 · end of the week 0.90","ok"]],
+    "3":[["retriever","cosine ≥ 0.85 → same neighborhood"]],
+    "4":[["retriever","matcha 0.21 · wet grass 0.18 · dirt 0.16 → far away (but close to each other)"]]
+  }</script>
+</section>

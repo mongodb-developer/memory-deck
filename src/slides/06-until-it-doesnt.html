@@ -1,0 +1,26 @@
+<section class="slide s-until" data-title="It works fine. Until it doesn’t.">
+  <style>
+    .s-until .head{display:flex;gap:60px;align-items:baseline;margin-bottom:40px}
+    .s-until .head h2{margin:0;font-size:86px}
+    .s-until .head .but{font:400 86px/.92 var(--display);color:var(--red);text-transform:uppercase}
+    .s-until .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:28px}
+    .s-until .card{border:1.5px solid var(--green);height:330px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:26px;border-radius:2px}
+    .s-until .card b{font:400 48px/1 var(--display);color:var(--green);text-transform:uppercase;margin-bottom:14px}
+    .s-until .card p{font-size:25px;line-height:1.35}
+    .s-until .card .meter{margin-top:22px;font:600 16px var(--mono);color:var(--amber)}
+  </style>
+  <div class="head"><h2 class="build">It works fine.</h2><div class="but" data-in="4">Until it doesn’t.</div></div>
+  <div class="cards">
+    <div class="card" data-in="1"><b>LLM context is limited</b><p>You’ll run out of space</p><div class="meter">context 7,912 / 8,000</div></div>
+    <div class="card" data-in="2"><b>What about past chats?</b><p>Most of them aren’t relevant to the current chat</p><div class="meter">214 past chats · 3 relevant</div></div>
+    <div class="card" data-in="3"><b>Things change</b><p>Love pasta but now shouldn’t eat it</p><div class="meter">2 facts in conflict</div></div>
+  </div>
+  <aside class="notes">Three ways “resend everything” breaks: space, relevance, and change. Land “until it doesn’t” last.</aside>
+  <script type="application/json" class="trace">{
+    "0":[["composer","render slide 06 · strategy: resend full history · status OK","ok"]],
+    "1":[["session","context window 99% full · next turn will be truncated","warn"]],
+    "2":[["retriever","loaded 214 past chats · 3 relevant to this request","warn"]],
+    "3":[["consolidator","conflict: \"loves pasta\" vs \"can't eat gluten\" · no way to resolve","warn"]],
+    "4":[["guard","strategy failed · need memory: select, retrieve, update","err"]]
+  }</script>
+</section>

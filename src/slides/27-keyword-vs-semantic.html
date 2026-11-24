@@ -1,0 +1,40 @@
+<section class="slide s-kw" data-title="Keyword search vs. semantic search">
+  <style>
+    .s-kw .req{display:inline-block;background:var(--green);color:var(--bg);padding:14px 22px;border-radius:4px;font:700 28px var(--body);margin-bottom:34px}
+    .s-kw .row{display:grid;grid-template-columns:470px 1fr;gap:56px;align-items:start}
+    .s-kw .mem{position:relative;overflow:hidden}
+    .s-kw .mem .lbl{font:600 14px var(--mono);letter-spacing:1px;color:var(--muted);margin-bottom:10px}
+    .s-kw .mem .txt{font:600 30px/1.3 var(--body)}
+    .s-kw .mem .w{border-radius:3px;transition:background .3s,color .3s}
+    .s-kw .mem.kw .w{background:rgba(255,105,96,.18);color:#ffb4ae}
+    .s-kw .mem.sem .w.hit{background:var(--green);color:var(--bg)}
+    .s-kw .mem.kw::after{content:"";position:absolute;top:0;bottom:0;width:80px;left:-80px;background:linear-gradient(90deg,transparent,rgba(255,192,16,.35),transparent);animation:scan 1s ease 1}
+    @keyframes scan{to{left:110%}}
+    .s-kw .lanes{display:flex;flex-direction:column;gap:20px}
+    .s-kw .lane{display:grid;grid-template-columns:1fr 300px;border:1px solid var(--line2);border-radius:12px;overflow:hidden}
+    .s-kw .lane > div{padding:20px 24px}
+    .s-kw .lane h3{font:400 34px var(--display);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+    .s-kw .lane p{font:400 22px var(--mono);color:#dfe8ec}
+    .s-kw .lane .res{display:grid;place-items:center;font:400 40px var(--display);text-transform:uppercase;white-space:nowrap}
+    .s-kw .lane.bad h3{color:var(--red)} .s-kw .lane.bad .res{background:rgba(255,105,96,.12);color:var(--red)}
+    .s-kw .lane.good{border-color:var(--green)} .s-kw .lane.good h3{color:var(--green)} .s-kw .lane.good .res{background:var(--green);color:var(--bg)}
+  </style>
+  <h2 class="build">Keyword search vs. semantic search</h2>
+  <div class="req">Me: “Add something to drink for the <u>weekend</u>.”</div>
+  <div class="row">
+    <div class="panel mem" data-cls="1:kw;3:-kw;3:sem"><div class="lbl">IN MEMORY</div>
+      <div class="txt"><span class="w">Delivery</span> <span class="w">on</span> <span class="w hit">Saturday</span> <span class="w">mornings</span></div></div>
+    <div class="lanes">
+      <div class="lane bad" data-in="1"><div><h3>Keyword search</h3><p>“weekend”: no match</p></div><div class="res" data-in="2">Nothing found</div></div>
+      <div class="lane good" data-in="3"><div><h3>Semantic search</h3><p>Delivery on Saturday mornings → weekend</p></div><div class="res" data-in="4">Match!</div></div>
+    </div>
+  </div>
+  <aside class="notes">Keyword search looks for the word “weekend” — it isn’t there. Semantic search knows Saturday is the weekend.</aside>
+  <script type="application/json" class="trace">{
+    "0":[["composer","render slide 27"],["session","user: \"Add something to drink for the weekend.\""]],
+    "1":[["retriever","$search {text: {query: \"weekend\", path: \"content\"}}"]],
+    "2":[["retriever","→ 0 hits · \"weekend\" ∉ any memory","warn"]],
+    "3":[["retriever","embed(query) · voyage · 1024 dims"],["retriever","$vectorSearch {index: \"memories_vec\", numCandidates: 200, limit: 5}"]],
+    "4":[["retriever","→ \"Delivery on Saturday mornings\" · score 0.83","ok"]]
+  }</script>
+</section>

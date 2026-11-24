@@ -1,0 +1,41 @@
+<section class="slide s-impl" data-title="Agent Engine implementation">
+  <style>
+    .s-impl .bg{font:400 26px var(--display);color:var(--muted);letter-spacing:.5px;text-align:center;margin:0 0 12px;text-transform:uppercase;transition:color .4s}
+    .s-impl .bg.lit{color:#fff}
+    .s-impl .flow{display:grid;grid-template-columns:1fr 34px 1fr 34px 1fr 34px 1fr;align-items:center}
+    .s-impl .box{height:76px;display:grid;place-items:center;border:2px solid var(--line2);color:var(--muted);font:700 26px var(--body);border-radius:3px;transition:background .4s,color .4s,border-color .4s,box-shadow .4s}
+    .s-impl .box.code{font:600 26px var(--mono)}
+    .s-impl .box.lit{background:var(--green);border-color:var(--green);color:var(--bg);box-shadow:0 0 26px rgba(0,237,100,.35)}
+    .s-impl .ar{text-align:center;color:var(--line2);font-size:26px;transition:color .4s}
+    .s-impl .ar.lit{color:var(--green)}
+    .s-impl .desc{display:grid;grid-template-columns:1fr 34px 1fr 34px 1fr 34px 1fr;margin-top:18px}
+    .s-impl .desc p{font-size:22px;line-height:1.35;color:#e8eef0;padding:0 8px}
+    .s-impl .desc code{display:block;margin-top:10px;font:400 15px/1.45 var(--mono);color:var(--muted);white-space:pre}
+    .s-impl .async{margin-top:40px;border:2px solid var(--green);border-radius:4px;padding:26px;text-align:center;font-size:28px}
+    .s-impl .async b{color:var(--green)}
+  </style>
+  <h2 class="build">Agent Engine implementation</h2>
+  <div class="bg" data-cls="2:lit">In the background, by Agent Engine</div>
+  <div class="flow">
+    <div class="box code" data-cls="1:lit">record_turn</div><div class="ar" data-cls="2:lit">→</div>
+    <div class="box" data-cls="2:lit">Snapshot</div><div class="ar" data-cls="3:lit">→</div>
+    <div class="box" data-cls="3:lit">Extract</div><div class="ar" data-cls="4:lit">→</div>
+    <div class="box" data-cls="4:lit">Store</div>
+  </div>
+  <div class="desc">
+    <p data-in="1">You record each turn as short-term memory<code>role · content · session_id</code></p><span></span>
+    <p data-in="2">After N messages, or when the chat goes idle<code>N=6 · idle 30s</code></p><span></span>
+    <p data-in="3">Categorize with an LLM<code>type · stated · conf · ttl</code></p><span></span>
+    <p data-in="4">Long-term memories in MongoDB, with vector embeddings<code>1,024 dims · $vectorSearch</code></p>
+  </div>
+  <div class="async" data-in="5"><b>Asynchronous:</b> the user never waits for memory to be persisted.</div>
+  <aside class="notes">Your code only calls record_turn. Snapshot, extraction and storage happen in the background inside Agent Engine.</aside>
+  <script type="application/json" class="trace">{
+    "0":[["composer","render slide 21 · pipeline"]],
+    "1":[["session","record_turn(session_id=\"s-481\", role=\"user\", content=\"I'm allergic to gluten.\") → 12 ms","ok"]],
+    "2":[["session","snapshot trigger: 6 messages since last snapshot → enqueue job"]],
+    "3":[["extractor","LLM extract(snapshot) → 4 candidates · 2 kept · 2 short-term"]],
+    "4":[["consolidator","embed(2 memories) → 1,024 dims · insertMany(memories) → acknowledged","ok"]],
+    "5":[["session","user-facing latency added by memory: 0 ms (async)","ok"]]
+  }</script>
+</section>

@@ -1,0 +1,27 @@
+<section class="slide s-where" data-title="Where’s the allergy?">
+  <style>
+    .s-where .pair{display:grid;grid-template-columns:1fr 160px 1fr;align-items:center;margin-top:50px}
+    .s-where .q{border-radius:12px;padding:44px 36px;font:700 44px/1.2 var(--body);text-align:center}
+    .s-where .q small{display:block;font:600 15px var(--mono);letter-spacing:1px;margin-bottom:14px;font-weight:600}
+    .s-where .q.a{border:2px solid var(--red);color:#fff} .s-where .q.a small{color:var(--red)}
+    .s-where .q.b{background:var(--green);color:var(--bg)} .s-where .q.b small{color:#00502a}
+    .s-where .ne{text-align:center;font:400 130px/1 var(--display);color:var(--red)}
+    .s-where .ne span{display:block;font:500 18px var(--mono);color:var(--muted);margin-top:6px}
+    .s-where .cap{margin-top:56px;text-align:center;font-size:32px;line-height:1.4}
+    .s-where .cap b{color:var(--red)}
+  </style>
+  <h2 class="build">Where’s the allergy?</h2>
+  <div class="pair">
+    <div class="q a" data-in="1"><small>MEMORY</small>“I’m allergic to gluten.”</div>
+    <div class="ne" data-in="2">≠<span>cosine 0.12</span></div>
+    <div class="q b" data-in="1"><small>REQUEST</small>“Quick dinner tonight.”</div>
+  </div>
+  <div class="cap" data-in="3"><b>No shared words. No similar meaning.</b><br>To a search engine, these two have nothing in common.</div>
+  <aside class="notes">The most important memory for this request — and search can’t see it. That’s not a bug in search.</aside>
+  <script type="application/json" class="trace">{
+    "0":[["composer","render slide 31"]],
+    "1":[["retriever","compare(memory, request)"]],
+    "2":[["retriever","keyword overlap: 0 tokens · cosine similarity 0.12","warn"]],
+    "3":[["guard","retrieval alone can't surface this constraint","err"]]
+  }</script>
+</section>

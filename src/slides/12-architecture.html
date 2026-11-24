@@ -1,0 +1,49 @@
+<section class="slide s-arch" data-title="How the demo fits together">
+  <style>
+    .s-arch .tiers{display:grid;grid-template-columns:330px 1fr;column-gap:30px}
+    .s-arch .lab b{display:block;font:400 34px/1 var(--display);color:var(--green);text-transform:uppercase}
+    .s-arch .lab span{display:block;font-size:19px;color:#dfe8ec;margin-top:6px;line-height:1.3}
+    .s-arch .lab{align-self:center}
+    .s-arch .top{border:1.5px dashed var(--muted);height:76px;display:grid;place-items:center;font:700 24px var(--body)}
+    .s-arch .tier{border:1px solid var(--line2);padding:12px;display:grid;grid-template-columns:repeat(3,1fr);gap:16px;background:rgba(2,38,52,.6)}
+    .s-arch .tier .c{height:84px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;border:1.5px solid var(--green);font:700 23px var(--body)}
+    .s-arch .tier .c span{font:400 17px var(--body);margin-top:4px}
+    .s-arch .tier .c .code{font:600 25px var(--mono)}
+    .s-arch .tier.solid .c{background:var(--green);color:var(--bg);border:none}
+    .s-arch .link{grid-column:2;height:52px;display:flex;align-items:center;gap:16px;padding-left:calc(50% - 2px)}
+    .s-arch .link i{display:block;width:2px;height:100%;background:var(--green);position:relative}
+    .s-arch .link i::after{content:"";position:absolute;bottom:-2px;left:-6px;border:7px solid transparent;border-top:9px solid var(--green);border-bottom:0}
+    .s-arch .link span{font:400 20px var(--display);color:var(--green);letter-spacing:.5px;text-transform:uppercase}
+    .s-arch .spacer{grid-column:1}
+    .s-arch .tier .c.lit{box-shadow:0 0 0 3px var(--amber),0 0 24px rgba(255,192,16,.4)}
+    .s-arch .top{font-size:23px}
+  </style>
+  <h2 class="build">How the demo fits together</h2>
+  <div class="tiers">
+    <div class="lab"><b>Google ADK</b><span>The agent framework</span></div>
+    <div class="top">Grocery Shopping Agent: agent loop, tools, session, 3 callbacks</div>
+
+    <div class="spacer" data-in="1"></div>
+    <div class="link" data-in="1"><i></i><span>Callbacks</span></div>
+    <div class="lab" data-in="1"><b>Atlas Agent Engine</b><span>The memory service<br>Called from the callbacks</span></div>
+    <div class="tier" data-in="1">
+      <div class="c" data-cls="2:lit;3:-lit"><span class="code">record_turn</span><span>Saves each turn</span></div>
+      <div class="c" data-cls="3:lit;4:-lit"><b>Extraction</b><span>Decides what to keep</span></div>
+      <div class="c" data-cls="4:lit;5:-lit"><span class="code">build_context</span><span>Finds what’s relevant</span></div>
+    </div>
+
+    <div class="spacer" data-in="5"></div>
+    <div class="link" data-in="5"><i></i><span>All data in</span></div>
+    <div class="lab" data-in="5"><b>MongoDB Atlas</b><span>Your own cluster</span></div>
+    <div class="tier solid" data-in="5"><div class="c">Memories<span>Written by Agent Engine</span></div><div class="c">Products<span>Searched by ADK tools</span></div><div class="c">Carts &amp; plans<span>Written by ADK tools</span></div></div>
+  </div>
+  <aside class="notes">ADK owns the loop; three callbacks call Agent Engine. Clicks 2–4 light up record_turn, extraction, build_context. Everything lands in your own Atlas cluster.</aside>
+  <script type="application/json" class="trace">{
+    "0":[["composer","render slide 12 · demo architecture"],["session","google.adk Agent(\"grocery-agent\") · tools: plan_meal, search_products, add_to_cart"]],
+    "1":[["session","register callbacks: after_model_callback, after_agent_callback, before_model_callback"]],
+    "2":[["session","after_model_callback → agent_engine.record_turn(session_id, turn)"]],
+    "3":[["extractor","after_agent_callback → extraction queued · runs async on snapshot"]],
+    "4":[["retriever","before_model_callback → build_context(query) → memories injected into prompt"]],
+    "5":[["consolidator","writes → atlas.agent_memory.memories","ok"],["retriever","ADK tools → atlas.grocery.products · carts · plans","ok"]]
+  }</script>
+</section>

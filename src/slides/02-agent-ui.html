@@ -1,0 +1,169 @@
+<section class="slide s-agentui no-trace no-footer" data-title="Who is your speaker? (demo agent)" data-hook="agentLookup" data-steps="2">
+  <style>
+    .s-agentui{padding:0;background:#F5F2EB;color:#1f2a2e;font-family:var(--body)}
+    .s-agentui .leaf{fill:#00ED64}
+    /* top bar */
+    .s-agentui .bar{position:absolute;left:0;right:0;top:0;height:80px;display:flex;align-items:center;padding:0 48px;font-size:20px}
+    .s-agentui .brand{display:flex;align-items:center;gap:10px;font-weight:600;font-size:22px}
+    .s-agentui .ctr{position:absolute;left:50%;transform:translateX(-50%);color:#7a837f}
+    .s-agentui .pill{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:16px;color:#5d6763;padding:6px 14px;border:1px solid #e6e1d6;border-radius:999px;background:#faf8f3}
+    .s-agentui .pill i{width:8px;height:8px;border-radius:50%;background:#00ED64}
+    /* hero (idle) */
+    .s-agentui .hero{position:absolute;left:0;right:0;top:330px;display:flex;justify-content:center;align-items:center;gap:18px;
+      font:400 64px Georgia,"Times New Roman",serif;color:#1f2a2e;transition:opacity .4s, transform .5s}
+    .s-agentui.chat .hero{opacity:0;transform:translateY(-40px)}
+    /* composer box */
+    .s-agentui .box{position:absolute;left:220px;width:1160px;top:440px;height:132px;background:#fff;border-radius:18px;box-shadow:0 6px 30px rgba(40,30,10,.08);border:1px solid #ece7dc;
+      padding:22px 26px;transition:top .6s cubic-bezier(.2,.8,.2,1)}
+    .s-agentui.chat .box{top:752px;height:118px}
+    .s-agentui .ph{position:absolute;left:28px;top:22px;font-size:26px;color:#a7aca8}
+    .s-agentui .prompt{position:absolute;left:28px;top:22px;right:28px;font-size:26px;color:#1f2a2e;background:#fff;white-space:nowrap;transform:none}
+    .s-agentui .prompt.typing-caret::after{background:#1f2a2e}
+    .s-agentui.chat .prompt{display:none}
+    .s-agentui .chips{position:absolute;left:24px;bottom:18px;display:flex;gap:10px}
+    .s-agentui .chips span{font-size:16px;color:#5d6763;border:1px solid #e6e1d6;border-radius:999px;padding:5px 13px;display:flex;gap:7px;align-items:center;transition:all .3s}
+    .s-agentui .chips span.lit{border-color:#00A35C;color:#00684A;background:#e9f8ef}
+    .s-agentui .send{position:absolute;right:20px;bottom:16px;width:44px;height:44px;border-radius:12px;background:#e8e4da;display:grid;place-items:center;color:#fff;font-size:22px;transition:background .3s}
+    .s-agentui .send.ready{background:#1f2a2e}
+    /* thread */
+    .s-agentui:not(.chat) .thread{visibility:hidden}
+    .s-agentui .thread{position:absolute;left:220px;width:1160px;top:104px;display:flex;flex-direction:column;gap:16px}
+    .s-agentui .ev{opacity:0;transform:translateY(10px);transition:opacity .35s, transform .35s}
+    .s-agentui .ev.shown{opacity:1;transform:none}
+    .s-agentui .u{align-self:flex-end;background:#1f2a2e;color:#fff;font-size:24px;padding:12px 20px;border-radius:16px 16px 4px 16px}
+    .s-agentui .think{display:flex;align-items:center;gap:10px;font-size:18px;color:#7a837f}
+    .s-agentui .think b{font-weight:500;background:linear-gradient(90deg,#7a837f 0%,#c9cdc8 50%,#7a837f 100%);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:shimmer 1.2s linear infinite}
+    .s-agentui .think.done b{animation:none;background:none;color:#7a837f}
+    @keyframes shimmer{to{background-position:-200% 0}}
+    .s-agentui .tools{display:flex;flex-direction:column;gap:8px;border-left:2px solid #e2ddd1;margin-left:8px;padding-left:20px}
+    .s-agentui .tool{font-size:19px;display:grid;grid-template-columns:28px auto 1fr auto;align-items:center;column-gap:10px}
+    .s-agentui .tool .ic{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;background:#ece8de}
+    .s-agentui .tool .ic svg{width:16px;height:16px;fill:none;stroke:#1f2a2e;stroke-width:2}
+    .s-agentui .tool .nm{font-weight:600}
+    .s-agentui .tool code{font:400 17px var(--mono);color:#5d6763;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .s-agentui .tool .st{font:500 15px var(--mono);color:#a7aca8;white-space:nowrap}
+    .s-agentui .tool .st::before{content:"";display:inline-block;width:12px;height:12px;margin-right:8px;vertical-align:-1px;border:2px solid #c9cdc8;border-top-color:#00A35C;border-radius:50%;animation:spin .8s linear infinite}
+    .s-agentui .tool.done .st{color:#00684A}
+    .s-agentui .tool.done .st::before{animation:none;border:none;content:"✓";width:auto;height:auto;margin-right:6px;color:#00A35C;font-weight:700}
+    .s-agentui .tool .res{grid-column:2 / -1;font:400 16px var(--mono);color:#7a837f;margin-top:4px;opacity:0;transition:opacity .3s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .s-agentui .tool.done .res{opacity:1}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    /* answer */
+    .s-agentui .ans{display:grid;grid-template-columns:132px 1fr;gap:28px;align-items:center;background:#fff;border:1px solid #ece7dc;border-radius:18px;padding:24px 28px;box-shadow:0 4px 20px rgba(40,30,10,.05)}
+    .s-agentui .ans img{width:132px;height:132px;border-radius:50%;object-fit:cover;object-position:50% 20%;border:3px solid #00ED64}
+    .s-agentui .ans p{font-size:27px;line-height:1.38;min-height:75px}
+    .s-agentui .ans p.typing-caret::after{background:#00A35C}
+    .s-agentui .tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+    .s-agentui .tags span{font:500 16px var(--body);color:#00684A;background:#e9f8ef;border:1px solid #b7ebcc;border-radius:999px;padding:5px 13px;opacity:0;transform:scale(.7);transition:opacity .25s, transform .3s cubic-bezier(.3,1.6,.5,1)}
+    .s-agentui .tags.shown span{opacity:1;transform:none}
+    .s-agentui .tags.shown span:nth-child(2){transition-delay:.06s} .s-agentui .tags.shown span:nth-child(3){transition-delay:.12s}
+    .s-agentui .tags.shown span:nth-child(4){transition-delay:.18s} .s-agentui .tags.shown span:nth-child(5){transition-delay:.24s}
+    .s-agentui .tags.shown span:nth-child(6){transition-delay:.3s}
+    .s-agentui .meta{font:400 14px var(--mono);color:#a7aca8;margin-top:10px}
+  </style>
+
+  <div class="bar">
+    <span class="brand"><svg width="13" height="26" viewBox="0 0 14 28"><path class="leaf" d="M7 0c.6 2 2 3.6 3.3 5.2C13 8.6 14.4 12.3 13.8 16.6c-.6 4-2.8 6.6-6 8.4L7.4 28H6.5l-.4-3.1C2.6 23 .3 20.2.1 16 -.3 11.3 1.7 7.7 4.6 4.6 5.7 3.3 6.6 1.9 7 0z"/></svg>Agent</span>
+    <span class="ctr">Conference intro</span>
+    <span class="pill"><i></i>Atlas · memory on</span>
+  </div>
+
+  <div class="hero"><svg width="30" height="60" viewBox="0 0 14 28"><path class="leaf" d="M7 0c.6 2 2 3.6 3.3 5.2C13 8.6 14.4 12.3 13.8 16.6c-.6 4-2.8 6.6-6 8.4L7.4 28H6.5l-.4-3.1C2.6 23 .3 20.2.1 16 -.3 11.3 1.7 7.7 4.6 4.6 5.7 3.3 6.6 1.9 7 0z"/></svg>Ready when you are.</div>
+
+  <!-- ================= EDIT THE LOOKUP HERE ================= -->
+  <div class="thread">
+    <div class="u ev" data-t="0">Who is Pavel Duchovny?</div>
+    <div class="think ev" data-t="250"><b>Thinking…</b></div>
+    <div class="tools">
+      <div class="tool ev" data-t="700" data-run="1100">
+        <span class="ic"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-5-5"/></svg></span>
+        <span class="nm">Web Search</span><code>"Pavel Duchovny"</code><span class="st" data-done="3 results"></span>
+        <div class="res">mongodb.com/developer · linkedin.com · github.com</div>
+      </div>
+      <div class="tool ev" data-t="1950" data-run="900">
+        <span class="ic"><svg viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0-6 6c0 2 1 3.5 2 4.5V17h8v-3.5c1-1 2-2.5 2-4.5a6 6 0 0 0-6-6z"/><path d="M9 21h6"/></svg></span>
+        <span class="nm">Memory Fetch</span><code>build_context(user="audience", topic="speaker")</code><span class="st" data-done="2 memories"></span>
+        <div class="res">“Speaking at re:Invent 2026” · “Keep intros to one sentence”</div>
+      </div>
+      <div class="tool ev" data-t="3000" data-run="1000">
+        <span class="ic"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v12c0 1.7 3.1 3 7 3s7-1.3 7-3V6"/><path d="M5 12c0 1.7 3.1 3 7 3s7-1.3 7-3"/></svg></span>
+        <span class="nm">Atlas Query</span><code>db.speakers.findOne({ name: "Pavel Duchovny" })</code><span class="st" data-done="1 document"></span>
+        <div class="res">{ company: "MongoDB", role: "Developer Advocate", talk: "Managing Context &amp; Memory for AI Agents" }</div>
+      </div>
+    </div>
+    <div class="ans ev" data-t="4200">
+      <img src="assets/speaker.jpg" alt="Pavel Duchovny">
+      <div>
+        <p class="answer">Pavel Duchovny is a Developer Advocate at MongoDB who helps developers give AI agents long-term memory with Atlas and Vector Search, and he’s your speaker today.</p>
+        <div class="tags"><span>MongoDB</span><span>Developer Relations</span><span>AI Agents</span><span>Vector Search</span><span>Agent Memory</span><span>re:Invent 2026 speaker</span></div>
+        <div class="meta">3 tools · 2 memories · 1 document · answered in 4.6 s</div>
+      </div>
+    </div>
+  </div>
+  <!-- ======================================================== -->
+
+  <div class="box">
+    <span class="ph">Ask anything…</span>
+    <div class="prompt type" data-in="1">Who is Pavel Duchovny?</div>
+    <div class="chips"><span class="c-web">⌕ Web</span><span class="c-atlas">◆ Atlas</span><span class="c-mem">◎ Memory</span></div>
+    <div class="send" data-cls="1:ready;2:-ready">↑</div>
+  </div>
+
+  <aside class="notes">Click 1 types the question. Click 2 sends it: the agent searches the web, fetches memory and queries Atlas, then answers in one sentence. A click while it runs finishes it instantly.</aside>
+  <script>
+  (window.DeckHooks ||= {}).agentLookup = (() => {
+    let timers = [], untrack = null, answerCtl = null;
+    const q = (s, sel) => [...s.querySelectorAll(sel)];
+    function finalState(s){
+      q(s, '.ev').forEach(e => e.classList.add('shown'));
+      q(s, '.tool').forEach(t => { t.classList.add('done'); const st = t.querySelector('.st'); st.textContent = st.dataset.done; });
+      s.querySelector('.think').classList.add('done'); s.querySelector('.think b').textContent = 'Used 3 tools';
+      s.querySelector('.tags').classList.add('shown');
+      q(s, '.chips span').forEach(c => c.classList.remove('lit'));
+    }
+    function reset(s){
+      timers.forEach(clearTimeout); timers = [];
+      q(s, '.ev').forEach(e => e.classList.remove('shown'));
+      q(s, '.tool').forEach(t => { t.classList.remove('done'); t.querySelector('.st').textContent = 'running'; });
+      const th = s.querySelector('.think'); th.classList.remove('done'); th.querySelector('b').textContent = 'Thinking…';
+      s.querySelector('.tags').classList.remove('shown');
+      q(s, '.chips span').forEach(c => c.classList.remove('lit'));
+    }
+    function run(s){
+      reset(s);
+      const at = (ms, fn) => timers.push(setTimeout(fn, ms));
+      const ctl = { finish(){ timers.forEach(clearTimeout); timers = []; if (answerCtl) answerCtl.finish(); finalState(s); if (untrack){ untrack(); untrack = null; } } };
+      untrack = window.DeckTrack(ctl);
+      const chipFor = { 'Web Search': '.c-web', 'Memory Fetch': '.c-mem', 'Atlas Query': '.c-atlas' };
+      q(s, '.ev').forEach(e => at(+e.dataset.t, () => {
+        e.classList.add('shown');
+        if (e.classList.contains('tool')){
+          const chip = s.querySelector(chipFor[e.querySelector('.nm').textContent]);
+          chip && chip.classList.add('lit');
+          at(+e.dataset.run, () => { e.classList.add('done'); const st = e.querySelector('.st'); st.textContent = st.dataset.done; chip && chip.classList.remove('lit'); });
+        }
+        if (e.classList.contains('ans')){
+          const th = s.querySelector('.think'); th.classList.add('done'); th.querySelector('b').textContent = 'Used 3 tools';
+          answerCtl = window.DeckType([e.querySelector('.answer')], 70);
+          const len = e.querySelector('.answer').textContent.length;
+          at(len / 70 * 1000 + 150, () => { s.querySelector('.tags').classList.add('shown'); });
+          at(len / 70 * 1000 + 900, () => ctl.finish());
+        }
+      }));
+    }
+    return {
+      init(s){ reset(s); },
+      apply(s, st, animate){
+        s.classList.toggle('chat', st >= 2);
+        if (st < 2){ if (untrack){ untrack(); untrack = null; } reset(s); return; }
+        if (animate) run(s); else { reset(s); finalState(s); }
+      }
+    };
+  })();
+  </script>
+  <script type="application/json" class="trace">{
+    "0":[["composer","render slide 02 · demo agent UI · memory: ON"]],
+    "1":[["session","user typing…"]],
+    "2":[["session","tools: web_search · memory_fetch · atlas_query"]]
+  }</script>
+</section>

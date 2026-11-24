@@ -1,0 +1,29 @@
+<section class="slide s-nomem" data-title="An agent without memory">
+  <style>
+    .s-nomem .chat{width:1040px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+    .s-nomem .divider{display:flex;align-items:center;gap:18px;font:600 15px var(--mono);color:var(--muted);letter-spacing:1px;margin:6px 0}
+    .s-nomem .divider::before,.s-nomem .divider::after{content:"";flex:1;border-top:1px dashed var(--line2)}
+    .s-nomem .divider .mem{color:var(--red)}
+    .s-nomem .stamp{position:absolute;right:130px;top:575px;font:400 64px var(--display);color:var(--red);border:5px solid var(--red);padding:6px 22px;border-radius:8px;transform:rotate(-7deg) scale(1.4) !important;opacity:0}
+    .s-nomem .stamp.on{transform:rotate(-7deg) scale(1) !important;opacity:1;transition:transform .25s cubic-bezier(.3,1.6,.5,1),opacity .15s}
+  </style>
+  <h2 class="build">An agent without memory</h2>
+  <div class="chat">
+    <div class="msg me" data-in="1"><small>Me</small>I’m allergic to gluten.</div>
+    <div class="msg ag type" data-in="2"><small>Agent</small>I’ll keep that in mind.</div>
+    <div class="divider" data-in="3">NEXT PROMPT · <span class="mem">memory: 0 items</span></div>
+    <div class="msg me" data-in="4"><small>Me</small>Suggest some dinner ideas.</div>
+    <div class="msg ag type" data-in="5"><small>Agent</small>Here’s a creamy carbonara pasta recipe…</div>
+  </div>
+  <div class="stamp" data-in="6">BUT PASTA HAS GLUTEN!</div>
+  <aside class="notes">“I’ll keep that in mind” — it can’t. Click through the second prompt and let the stamp land.</aside>
+  <script type="application/json" class="trace">{
+    "0":[["composer","render slide 03 · memory service: DISABLED for this demo","warn"]],
+    "1":[["session","turn 1 · user: \"I'm allergic to gluten.\""]],
+    "2":[["session","turn 1 · agent replied · 7 tokens"],["extractor","record_turn() not configured · nothing persisted","warn"]],
+    "3":[["session","new prompt · context window reset → 0 tokens","warn"]],
+    "4":[["retriever","build_context(\"dinner ideas\") → 0 memories"]],
+    "5":[["session","agent replied · recipe: carbonara (contains: wheat, egg)"]],
+    "6":[["guard","constraint violated: gluten · the agent never knew","err"]]
+  }</script>
+</section>

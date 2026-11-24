@@ -1,0 +1,342 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Managing Memory for AI Agents</title>
+<!-- GENERATED from src/ by build.py — edit src/shell.html and src/slides/*.html, then run: python3 build.py -->
+<link rel="stylesheet" href="assets/fonts/fonts.css">
+<style>
+:root{
+  --bg:#001E2B; --panel:#022634; --panel2:#06303f; --line:#1c4252; --line2:#2b5566;
+  --green:#00ED64; --green-d:#00A35C; --lime:#C6F432; --white:#fff; --muted:#8aa1ab; --dim:#4f6c78;
+  --red:#FF6960; --amber:#FFC010; --blue:#9DD7FF; --purple:#E3A8FF;
+  --display:"Special Gothic Condensed One","Oswald","Arial Narrow",Impact,sans-serif;
+  --body:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"Source Code Pro",ui-monospace,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--white);font-family:var(--body);overflow:hidden}
+body{display:grid;place-items:center;cursor:default}
+
+/* ---------- 16:9 stage, scaled to fit ---------- */
+#stage{position:relative;width:1600px;height:900px;transform-origin:center center;flex:none;overflow:hidden;background:var(--bg)}
+.slide{position:absolute;inset:0;padding:64px 80px 0;display:none}
+.slide.active{display:block}
+.instant *, .instant{transition:none !important;animation-duration:0s !important}
+aside.notes{display:none}
+
+/* ---------- chrome: progress, status pill, footer, trace ---------- */
+#progress{position:absolute;top:0;left:0;height:4px;background:var(--green);transition:width .4s ease;z-index:5}
+#status{position:absolute;top:22px;right:28px;z-index:5;display:flex;align-items:center;gap:10px;
+  font:500 15px var(--mono);color:var(--muted);padding:7px 14px;border:1px solid var(--line);border-radius:999px;background:rgba(2,38,52,.85)}
+#status .dot{width:9px;height:9px;border-radius:50%;background:var(--green-d)}
+#status.busy .dot{background:var(--green);box-shadow:0 0 0 0 rgba(0,237,100,.6);animation:pulse 1s infinite}
+#status b{color:var(--white);font-weight:600}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(0,237,100,.55)}100%{box-shadow:0 0 0 10px rgba(0,237,100,0)}}
+
+#footer{position:absolute;left:80px;right:80px;bottom:22px;height:28px;display:flex;align-items:center;gap:40px;font-size:13px;color:#cfd8dc;z-index:4}
+#footer .logo{display:flex;align-items:center;gap:8px;font:600 21px var(--body);letter-spacing:-.3px;color:#fff}
+#footer .tag{font-size:11px;letter-spacing:.4px}
+#footer .num{margin-left:auto;font:500 13px var(--mono)}
+
+#trace{position:absolute;left:80px;right:80px;bottom:62px;height:118px;z-index:4;
+  border:1px solid var(--line);border-radius:10px;background:linear-gradient(180deg,rgba(1,22,32,.92),rgba(1,18,26,.96));
+  font:400 15px/22px var(--mono);padding:8px 16px;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;transition:opacity .3s}
+#trace.hidden{opacity:0}
+#trace .hdr{position:absolute;top:7px;right:14px;font-size:12px;color:var(--dim);letter-spacing:.5px}
+#trace .ln{white-space:nowrap;color:#c9d6dc;display:flex;gap:12px}
+#trace .ln .t{color:var(--dim)}
+#trace .ln .a{min-width:122px;font-weight:600}
+#trace .ln.warn .m{color:var(--amber)} #trace .ln.err .m{color:var(--red)} #trace .ln.ok .m{color:var(--green)}
+.a-composer{color:var(--blue)} .a-extractor{color:var(--green)} .a-retriever{color:var(--amber)}
+.a-consolidator{color:var(--purple)} .a-session{color:var(--muted)} .a-guard{color:var(--red)}
+
+/* typing caret */
+.typing-caret::after{content:"";display:inline-block;width:.08em;min-width:3px;height:.9em;margin-left:.06em;background:var(--green);vertical-align:-.08em;animation:blink .7s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+
+#blackout{position:fixed;inset:0;background:#000;z-index:50;display:none}
+#blackout.on{display:block}
+#help{position:fixed;left:16px;top:10px;font:12px var(--mono);color:var(--dim);z-index:40;transition:opacity 1s}
+
+/* ---------- shared type & primitives ---------- */
+.kicker{font:600 30px var(--body);color:var(--green)}
+h1,h2{font-family:var(--display);font-weight:400;color:var(--green);text-transform:uppercase;line-height:.92;letter-spacing:.5px}
+h2{font-size:64px;margin-bottom:36px}
+.mono{font-family:var(--mono)}
+.muted{color:var(--muted)}
+.hl-green{color:var(--green)} .hl-lime{color:var(--lime);font-weight:700} .hl-red{color:var(--red)} .hl-amber{color:var(--amber)}
+
+[data-in]{opacity:0;transform:translateY(14px);transition:opacity .45s ease,transform .45s cubic-bezier(.2,.8,.2,1)}
+[data-in].on{opacity:1;transform:none}
+
+/* chat bubbles */
+.msg{display:flex;flex-direction:column;max-width:640px;padding:16px 22px;border-radius:14px;font-size:26px;line-height:1.3}
+.msg small{font:600 13px var(--mono);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px}
+.msg.me{align-self:flex-end;background:var(--green);color:var(--bg)} .msg.me small{color:#00502a}
+.msg.ag{align-self:flex-start;background:var(--panel2);border:1px solid var(--line2)} .msg.ag small{color:var(--blue)}
+
+/* generic card / panel */
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:22px 26px}
+.panel h3{font:400 34px var(--display);color:var(--green);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.panel p{font-size:21px;line-height:1.4;color:#dfe8ec}
+
+/* JSON / code document */
+.doc{background:var(--panel);border:1px solid var(--line2);border-radius:12px;padding:20px 24px;font:400 21px/1.55 var(--mono);white-space:pre;position:relative}
+.doc .lbl{position:absolute;top:-12px;left:18px;background:var(--bg);padding:0 8px;font:600 13px var(--mono);color:var(--muted);letter-spacing:1px}
+.k{color:var(--blue)} .s{color:var(--green)} .n{color:var(--amber)} .b{color:var(--purple)} .p{color:var(--muted)}
+.swapped{animation:flash .9s ease}
+@keyframes flash{0%{background:rgba(255,105,96,.55)}100%{background:transparent}}
+
+/* numbered badge */
+.num-badge{display:inline-grid;place-items:center;width:54px;height:54px;border-radius:50%;background:var(--green);color:var(--bg);font:400 32px var(--display);flex:none}
+
+/* curved background grid (MongoDB template art) */
+.grid-bg::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;opacity:.55;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1600 900' fill='none' stroke='%2300A35C' stroke-opacity='.45' stroke-width='1.3'%3E%3Cpath d='M-200 120 Q800 -60 1800 120'/%3E%3Cpath d='M-200 260 Q800 60 1800 260'/%3E%3Cpath d='M-200 420 Q800 200 1800 420'/%3E%3Cpath d='M-200 600 Q800 360 1800 600'/%3E%3Cpath d='M-200 800 Q800 540 1800 800'/%3E%3Cpath d='M-200 1000 Q800 740 1800 1000'/%3E%3Cpath d='M800 -100 V1000'/%3E%3Cpath d='M640 -100 L560 1000'/%3E%3Cpath d='M960 -100 L1040 1000'/%3E%3Cpath d='M480 -100 L300 1000'/%3E%3Cpath d='M1120 -100 L1300 1000'/%3E%3Cpath d='M320 -100 L40 1000'/%3E%3Cpath d='M1280 -100 L1560 1000'/%3E%3Cpath d='M160 -100 L-220 1000'/%3E%3Cpath d='M1440 -100 L1820 1000'/%3E%3C/svg%3E") center/cover no-repeat}
+.grid-bg > *{position:relative;z-index:1}
+
+/* section divider: 01 / WHAT'S WORTH REMEMBERING? */
+.section-div{display:flex;flex-direction:column;justify-content:center;height:640px}
+.section-div .no{font:400 220px/.8 var(--display);color:var(--green);opacity:.9;margin-bottom:20px}
+.section-div h1{font-size:150px;line-height:.88;color:#fff}
+
+/* agenda: the 3 problems (reused on slides 7, 14, 24, 37). Add class "is-1/2/3" to .agenda to spotlight one */
+.agenda{display:flex;flex-direction:column;gap:18px;margin-top:10px}
+.agenda .item{display:flex;gap:26px;align-items:center;padding:20px 26px;border:1px solid var(--line);border-radius:12px;background:var(--panel);transition:opacity .4s,border-color .4s,background .4s}
+.agenda .item b{font:400 44px var(--display);text-transform:uppercase;letter-spacing:.5px;display:block}
+.agenda .item p{font-size:21px;color:var(--muted);margin-top:4px}
+.agenda.is-1 .item:not(:nth-child(1)), .agenda.is-2 .item:not(:nth-child(2)), .agenda.is-3 .item:not(:nth-child(3)){opacity:.35}
+.agenda.is-1 .item:nth-child(1), .agenda.is-2 .item:nth-child(2), .agenda.is-3 .item:nth-child(3){border-color:var(--green);background:rgba(0,237,100,.08)}
+.agenda.is-1 .item:nth-child(1) b, .agenda.is-2 .item:nth-child(2) b, .agenda.is-3 .item:nth-child(3) b{color:var(--green)}
+
+/* section takeaway */
+.takeaway{margin-top:30px;border:2px solid var(--green);border-radius:6px;padding:46px 56px;background:rgba(0,237,100,.05)}
+.takeaway .lbl{font:600 16px var(--mono);letter-spacing:2px;color:var(--muted);margin-bottom:18px}
+.takeaway .big{font:400 86px/.95 var(--display);color:var(--green);text-transform:uppercase}
+.takeaway p{font-size:28px;line-height:1.4;margin-top:28px;max-width:1150px}
+
+/* big centered statement */
+.statement{height:640px;display:flex;flex-direction:column;justify-content:center}
+.statement .big{font:400 140px/.9 var(--display);color:var(--green);text-transform:uppercase}
+.statement .q{font:600 64px/1.15 var(--body);color:#fff;max-width:1250px}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="progress"></div>
+  <div id="status"><span class="dot"></span><span id="statusText">agent idle</span></div>
+
+<!--SLIDES-->
+
+  <div id="trace"><span class="hdr">AGENT TRACE · Atlas Agent Engine</span></div>
+  <div id="footer">
+    <span class="logo"><svg width="14" height="28" viewBox="0 0 14 28" aria-hidden="true"><path fill="#00ED64" d="M7 0c.6 2 2 3.6 3.3 5.2C13 8.6 14.4 12.3 13.8 16.6c-.6 4-2.8 6.6-6 8.4L7.4 28H6.5l-.4-3.1C2.6 23 .3 20.2.1 16 -.3 11.3 1.7 7.7 4.6 4.6 5.7 3.3 6.6 1.9 7 0z"/></svg>MongoDB.</span>
+    <span class="tag">BUILD ANYTHING. CHANGE EVERYTHING.</span>
+    <span class="num" id="num">1</span>
+  </div>
+</div>
+<div id="blackout"></div>
+<div id="help">→ / PageDown / clicker: next · ← back · B blackout · T trace · F fullscreen · S speaker notes</div>
+
+<script>
+(() => {
+  const stage = document.getElementById('stage');
+  const slides = [...document.querySelectorAll('.slide')];
+  const traceEl = document.getElementById('trace');
+  const statusEl = document.getElementById('status');
+  const statusText = document.getElementById('statusText');
+  const hooks = window.DeckHooks || {};
+  let cur = 0, step = 0, scale = 1;
+
+  /* ---------- scale stage to window ---------- */
+  function fit(){ scale = Math.min(innerWidth/1600, innerHeight/900); stage.style.transform = `scale(${scale})`; }
+  addEventListener('resize', fit); fit();
+
+  /* ---------- running animations: any keypress finishes them instantly ---------- */
+  const running = new Set();
+  function finishAll(){ [...running].forEach(r => r.finish()); }
+  function setBusy(){ statusEl.classList.toggle('busy', running.size > 0); }
+
+  // Types a list of elements in sequence, preserving inner markup (syntax colours, <br>s).
+  function typeSeq(els, cps = 55){
+    const nodes = [];
+    els.forEach(el => {
+      if (el._tpl === undefined) el._tpl = el.innerHTML; else el.innerHTML = el._tpl;
+      const w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+      while (w.nextNode()) nodes.push({ n: w.currentNode, full: w.currentNode.nodeValue, el });
+    });
+    const total = nodes.reduce((s, x) => s + x.full.length, 0);
+    nodes.forEach(x => x.n.nodeValue = '');
+    let done = false, raf, start = performance.now(), lastEl = null;
+    const ctl = { finish(){ if (done) return; done = true; cancelAnimationFrame(raf);
+      nodes.forEach(x => x.n.nodeValue = x.full); if (lastEl) lastEl.classList.remove('typing-caret');
+      running.delete(ctl); setBusy(); } };
+    function tick(now){
+      let left = Math.floor((now - start) / 1000 * cps);
+      for (const x of nodes){
+        const take = Math.min(left, x.full.length); x.n.nodeValue = x.full.slice(0, take); left -= take;
+        if (take < x.full.length){ if (lastEl !== x.el){ lastEl && lastEl.classList.remove('typing-caret'); lastEl = x.el; lastEl.classList.add('typing-caret'); } break; }
+      }
+      if (Math.floor((now - start) / 1000 * cps) >= total) return ctl.finish();
+      raf = requestAnimationFrame(tick);
+    }
+    running.add(ctl); setBusy(); raf = requestAnimationFrame(tick);
+    return ctl;
+  }
+  window.DeckType = typeSeq;
+  // Register a custom animation ({finish}) so the next clicker press completes it instead of advancing; returns a "done" callback.
+  window.DeckTrack = ctl => { running.add(ctl); setBusy(); return () => { running.delete(ctl); setBusy(); }; };
+
+  /* ---------- trace strip ---------- */
+  function stamp(i){ const s = 14*3600 + 2*60 + i*3; return `${String(Math.floor(s/3600)).padStart(2,'0')}:${String(Math.floor(s/60)%60).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`; }
+  function traceOf(s){ if (!s._trace){ const j = s.querySelector('script.trace'); s._trace = j ? JSON.parse(j.textContent) : {}; } return s._trace; }
+  function renderTrace(s, upto, animateStep){
+    traceEl.querySelectorAll('.ln').forEach(n => n.remove());
+    traceEl.style.display = s.classList.contains('no-trace') ? 'none' : '';
+    document.getElementById('footer').style.display = s.classList.contains('no-footer') ? 'none' : '';
+    statusEl.style.display = s.classList.contains('no-trace') ? 'none' : '';
+    const tr = traceOf(s); const fresh = []; let i = cur * 12;
+    Object.keys(tr).map(Number).sort((a,b)=>a-b).filter(k => k <= upto).forEach(k => {
+      tr[k].forEach(([agent, msg, kind]) => {
+        const ln = document.createElement('div');
+        ln.className = 'ln ' + (kind || '');
+        ln.innerHTML = `<span class="t">${stamp(i++)}</span><span class="a a-${agent}">${agent}</span><span class="m"></span>`;
+        ln.querySelector('.m').textContent = msg;
+        traceEl.appendChild(ln);
+        if (k === animateStep) fresh.push(ln.querySelector('.m'));
+        statusText.innerHTML = `<b>${agent}</b> · slide ${cur+1}/${slides.length}`;
+      });
+    });
+    const lns = traceEl.querySelectorAll('.ln'); [...lns].slice(0, -5).forEach(n => n.remove());
+    if (fresh.length) typeSeq(fresh.filter(m => m.isConnected), 140);
+  }
+
+  /* ---------- declarative per-step state ---------- */
+  const pairs = v => v.split(';').map(p => { const i = p.indexOf(':'); return [Number(p.slice(0,i)), p.slice(i+1)]; });
+  function maxStep(s){
+    if (s._max !== undefined) return s._max;
+    let m = 0;
+    s.querySelectorAll('[data-in],[data-out],[data-cls],[data-swap],[data-move]').forEach(el => {
+      ['in','out'].forEach(a => { if (el.dataset[a]) m = Math.max(m, +el.dataset[a]); });
+      ['cls','swap','move'].forEach(a => { if (el.dataset[a]) pairs(el.dataset[a]).forEach(([n]) => m = Math.max(m, n)); });
+    });
+    Object.keys(traceOf(s)).forEach(k => m = Math.max(m, +k));
+    if (s.dataset.steps) m = Math.max(m, +s.dataset.steps);
+    return (s._max = m);
+  }
+
+  function apply(s, st, animate){
+    if (!animate){ s.classList.add('instant'); requestAnimationFrame(() => requestAnimationFrame(() => s.classList.remove('instant'))); }
+    const scope = el => el.closest('.slide') === s;
+    s.querySelectorAll('[data-in]').forEach(el => {
+      const gone = el.dataset.out && st >= +el.dataset.out;
+      const on = st >= +el.dataset.in && !gone;
+      const was = el.classList.contains('on');
+      el.classList.toggle('on', on);
+      el.style.display = gone ? 'none' : '';
+      if (on && !was && animate && el.classList.contains('type')) typeSeq([el], el.classList.contains('doc') ? 120 : 45);
+    });
+    s.querySelectorAll('[data-cls]').forEach(el => {
+      const want = new Map();
+      pairs(el.dataset.cls).forEach(([n, c]) => { const neg = c.startsWith('-'); const name = neg ? c.slice(1) : c;
+        if (!want.has(name)) want.set(name, false); if (st >= n) want.set(name, !neg); });
+      want.forEach((v, c) => el.classList.toggle(c, v));
+    });
+    s.querySelectorAll('[data-swap]').forEach(el => {
+      if (el._orig === undefined) el._orig = el.textContent;
+      let txt = el._orig; pairs(el.dataset.swap).forEach(([n, t]) => { if (st >= n) txt = t; });
+      if (txt !== el.textContent){ el.textContent = txt; if (animate){ el.classList.remove('swapped'); void el.offsetWidth; el.classList.add('swapped'); } }
+    });
+    const movers = [...s.querySelectorAll('[data-move]')];
+    if (movers.length){
+      const before = new Map(movers.map(el => [el, el.getBoundingClientRect()]));
+      movers.forEach((el, idx) => {
+        if (!el._home){ el._home = el.parentElement; el._idx = idx; }
+        let target = el._home; pairs(el.dataset.move).forEach(([n, id]) => { if (st >= n) target = document.getElementById(id); });
+        if (el.parentElement !== target){
+          const after = [...target.querySelectorAll('[data-move]')].find(o => o._idx > el._idx);
+          target.insertBefore(el, after || null);
+        }
+      });
+      if (animate) movers.forEach(el => {
+        const a = before.get(el), b = el.getBoundingClientRect();
+        const dx = (a.left - b.left) / scale, dy = (a.top - b.top) / scale;
+        if (Math.abs(dx) + Math.abs(dy) > 1) el.animate([{ transform: `translate(${dx}px,${dy}px)` }, { transform: 'none' }], { duration: 650, easing: 'cubic-bezier(.2,.8,.2,1)' });
+      });
+    }
+    const h = hooks[s.dataset.hook]; if (h && h.apply) h.apply(s, st, animate);
+  }
+
+  slides.forEach(s => { const h = hooks[s.dataset.hook]; if (h && h.init) h.init(s); });
+
+  /* ---------- speaker notes window (S) ---------- */
+  let notesWin = null;
+  function notesOf(s){ const n = s.querySelector('aside.notes'); return n ? n.innerHTML : '<i>No notes for this slide.</i>'; }
+  function updateNotes(){
+    if (!notesWin || notesWin.closed) return;
+    const s = slides[cur], nx = slides[cur + 1];
+    notesWin.document.body.innerHTML = `<div style="font:14px system-ui;color:#8aa1ab">Slide ${cur+1}/${slides.length} · step ${step}/${maxStep(s)} · ${s.dataset.title||''}</div>
+      <div style="font:26px/1.45 system-ui;margin:14px 0 22px">${notesOf(s)}</div>
+      <div style="font:14px system-ui;color:#8aa1ab">Next: ${nx ? nx.dataset.title : '— end —'}</div>
+      <div id="clock" style="font:600 40px ui-monospace;margin-top:18px;color:#00ED64"></div>`;
+  }
+  function openNotes(){
+    notesWin = window.open('', 'deck-notes', 'width=760,height=560');
+    if (!notesWin) return;
+    notesWin.document.title = 'Speaker notes';
+    notesWin.document.documentElement.style.background = '#001E2B';
+    notesWin.document.body.style.cssText = 'margin:24px;color:#fff;background:#001E2B';
+    notesWin.addEventListener('keydown', onKey);
+    const t0 = Date.now();
+    notesWin.setInterval(() => { const c = notesWin.document.getElementById('clock'); if (c){ const s = Math.floor((Date.now()-t0)/1000); c.textContent = `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`; } }, 1000);
+    updateNotes();
+  }
+
+  /* ---------- navigation ---------- */
+  function show(i, st, mode){ // mode: 'enter' (animated build), 'step' (animated step), 'jump' (instant)
+    finishAll();
+    const prev = slides[cur]; cur = i; step = st; const s = slides[cur];
+    if (prev !== s) prev.classList.remove('active');
+    s.classList.add('active');
+    apply(s, step, mode !== 'jump');
+    if (mode === 'enter'){ const builds = [...s.querySelectorAll('.build')]; if (builds.length) typeSeq(builds, 38); }
+    renderTrace(s, step, mode === 'jump' ? -1 : step);
+    document.getElementById('num').textContent = cur + 1;
+    document.getElementById('progress').style.width = ((cur + (step + 1) / (maxStep(s) + 1)) / slides.length * 100) + '%';
+    history.replaceState(null, '', `#/${cur+1}/${step}`);
+    updateNotes();
+  }
+  function next(){
+    if (running.size){ finishAll(); return; }          // first press completes a running build
+    if (step < maxStep(slides[cur])) show(cur, step + 1, 'step');
+    else if (cur < slides.length - 1) show(cur + 1, 0, 'enter');
+  }
+  function prev(){
+    if (step > 0) show(cur, step - 1, 'jump');
+    else if (cur > 0) show(cur - 1, maxStep(slides[cur - 1]), 'jump');
+  }
+  function onKey(e){
+    const k = e.key;
+    if (['ArrowRight','ArrowDown','PageDown',' ','Enter','n','N'].includes(k)){ e.preventDefault(); next(); }
+    else if (['ArrowLeft','ArrowUp','PageUp','Backspace','p','P'].includes(k)){ e.preventDefault(); prev(); }
+    else if (k === 'Home') show(0, 0, 'enter');
+    else if (k === 'End') show(slides.length - 1, maxStep(slides.at(-1)), 'jump');
+    else if (k === 'b' || k === 'B' || k === '.') document.getElementById('blackout').classList.toggle('on');
+    else if (k === 't' || k === 'T') traceEl.classList.toggle('hidden');
+    else if (k === 's' || k === 'S') openNotes();
+    else if (k === 'f' || k === 'F' || k === 'F5') { e.preventDefault(); document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen(); }
+  }
+  addEventListener('keydown', onKey);
+  stage.addEventListener('click', e => { if (!e.target.closest('a')) next(); });
+
+  setTimeout(() => document.getElementById('help').style.opacity = 0, 6000);
+  const m = location.hash.match(/#\/(\d+)\/(\d+)/);
+  if (m) document.getElementById("help").style.display = "none";
+  if (m){ const i = Math.min(slides.length, Math.max(1, +m[1])) - 1; show(i, Math.min(+m[2], maxStep(slides[i])), "jump"); } else show(0, 0, "enter");
+  window.DeckGo = (n, st) => show(n - 1, st ?? 0, 'jump');   // for screenshots / debugging
+})();
+</script>
+</body>
+</html>

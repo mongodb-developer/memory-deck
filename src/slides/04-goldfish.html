@@ -1,0 +1,28 @@
+<section class="slide s-gold grid-bg" data-title="Without memory, a goldfish">
+  <style>
+    .s-gold .cols{display:grid;grid-template-columns:1fr 600px;gap:50px;margin-top:6px}
+    .s-gold h1{font-size:150px;line-height:.88}
+    .s-gold .fish-word{font:400 150px/.88 var(--display);color:var(--green);text-transform:uppercase;margin-top:26px}
+    .s-gold .body{font-size:30px;line-height:1.4;margin-top:34px;color:#eef3f5}
+    .s-gold figure img{width:600px;height:470px;object-fit:cover;display:block;border-radius:4px}
+    .s-gold figcaption{font:italic 400 21px var(--body);color:#dfe8ec;text-align:right;margin-top:14px}
+  </style>
+  <div class="cols">
+    <div>
+      <h1><span class="build">Without</span><br><span class="build">memory,</span></h1>
+      <div class="fish-word" data-in="1">a goldfish.</div>
+      <div class="body" data-in="2">Each LLM call starts from scratch.<br>The LLM doesn’t have <i>any</i> context about you.</div>
+    </div>
+    <figure data-in="0">
+      <img src="assets/goldfish.jpg" alt="A goldfish in a round glass bowl">
+      <figcaption data-in="3">Fun fact: goldfish actually remember for up to 3 months.</figcaption>
+    </figure>
+  </div>
+  <aside class="notes">Every LLM call is stateless. Then the fun fact — the goldfish is doing better than our agent.</aside>
+  <script type="application/json" class="trace">{
+    "0":[["composer","render slide 04 · loading image goldfish.jpg"]],
+    "1":[["session","LLM call #1 · stateless · prior context: none"]],
+    "2":[["retriever","build_context(user) → 0 memories · every call starts at 0 tokens","warn"]],
+    "3":[["guard","fact-check: goldfish memory ≈ 3 months · our agent: 0 seconds","err"]]
+  }</script>
+</section>

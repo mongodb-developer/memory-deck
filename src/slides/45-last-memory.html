@@ -1,0 +1,28 @@
+<section class="slide s-last grid-bg" data-title="One last memory">
+  <style>
+    .s-last .wrap{display:grid;grid-template-columns:1fr 420px;gap:60px;align-items:center;margin-top:10px}
+    .s-last .doc{font-size:26px;min-height:340px;padding:28px 34px}
+    .s-last .cta{display:flex;flex-direction:column;align-items:center;gap:14px}
+    .s-last .cta img{width:270px;height:270px;border-radius:6px}
+    .s-last .cta b{font:400 48px/.95 var(--display);color:var(--green);text-transform:uppercase}
+    .s-last .cta a{font:600 30px var(--mono);color:#fff;text-decoration:none;border-bottom:3px solid var(--green)}
+  </style>
+  <h2 class="build">One last memory</h2>
+  <div class="wrap">
+    <div class="doc type" data-in="1"><span class="lbl">memories · just now</span>{
+  <span class="k">"type"</span>: <span class="s">"episodic"</span>,
+  <span class="k">"content"</span>: <span class="s">"Spoke at Re:Invent 2026.
+              The audience was great."</span>,
+  <span class="k">"stated"</span>: <span class="b">true</span>,
+  <span class="k">"is_latest"</span>: <span class="b">true</span>,
+  <span class="k">"expires_at"</span>: <span class="b">null</span>
+}</div>
+    <div class="cta" data-in="2"><img src="assets/qr-tryatlas.png" alt="QR code for mdb.link/tryatlas"><b>Try MongoDB Atlas</b><a href="https://mdb.link/tryatlas">mdb.link/tryatlas</a></div>
+  </div>
+  <aside class="notes">Thank you. This one never expires.</aside>
+  <script type="application/json" class="trace">{
+    "0":[["composer","render slide 45 · final slide"]],
+    "1":[["session","record_turn(speaker, \"thank you, re:Invent!\")"],["extractor","classify → episodic · stated · conf 0.99 · keep forever"]],
+    "2":[["consolidator","insertOne(memories) → acknowledged · expires_at: null","ok"],["session","session reinvent-2026 closed · 1 memory kept","ok"]]
+  }</script>
+</section>

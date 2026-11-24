@@ -1,0 +1,41 @@
+<section class="slide s-tools" data-title="Before we start: the tools">
+  <style>
+    .s-tools .tiers{display:grid;grid-template-columns:330px 1fr;column-gap:30px}
+    .s-tools .lab b{display:block;font:400 34px/1 var(--display);color:var(--green);text-transform:uppercase}
+    .s-tools .lab span{display:block;font-size:19px;color:#dfe8ec;margin-top:6px;line-height:1.3}
+    .s-tools .lab{align-self:center}
+    .s-tools .top{border:1.5px dashed var(--muted);height:76px;display:grid;place-items:center;font:700 24px var(--body)}
+    .s-tools .tier{border:1px solid var(--line2);padding:12px;display:grid;grid-template-columns:repeat(3,1fr);gap:16px;background:rgba(2,38,52,.6)}
+    .s-tools .tier .c{height:84px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;border:1.5px solid var(--green);font:700 23px var(--body)}
+    .s-tools .tier .c span{font:400 17px var(--body);margin-top:4px}
+    .s-tools .tier .c .code{font:600 25px var(--mono)}
+    .s-tools .tier.solid .c{background:var(--green);color:var(--bg);border:none}
+    .s-tools .link{grid-column:2;height:52px;display:flex;align-items:center;gap:16px;padding-left:calc(50% - 2px)}
+    .s-tools .link i{display:block;width:2px;height:100%;background:var(--green);position:relative}
+    .s-tools .link i::after{content:"";position:absolute;bottom:-2px;left:-6px;border:7px solid transparent;border-top:9px solid var(--green);border-bottom:0}
+    .s-tools .link span{font:400 20px var(--display);color:var(--green);letter-spacing:.5px;text-transform:uppercase}
+    .s-tools .spacer{grid-column:1}
+    .s-tools .tier .c.lit{box-shadow:0 0 0 3px var(--amber),0 0 24px rgba(255,192,16,.4)}
+  </style>
+  <h2 class="build">Before we start: the tools</h2>
+  <div class="tiers">
+    <div class="lab"><b>The agent (code + Bedrock)</b></div>
+    <div class="top">Grocery Shopping Agent</div>
+
+    <div class="spacer" data-in="1"></div>
+    <div class="link" data-in="1"><i></i><span>Uses</span></div>
+    <div class="lab" data-in="1"><b>Atlas Agent Engine</b></div>
+    <div class="tier" data-in="1"><div class="c">Runs your agents</div><div class="c">Gives them memory</div><div class="c">Governed &amp; secure</div></div>
+
+    <div class="spacer" data-in="2"></div>
+    <div class="link" data-in="2"><i></i><span>Built on</span></div>
+    <div class="lab" data-in="2"><b>MongoDB Atlas</b><span>MongoDB in the cloud</span></div>
+    <div class="tier solid" data-in="2"><div class="c">Documents<span>Flexible, nested data</span></div><div class="c">MongoDB Search<span>Finds by keywords</span></div><div class="c">Vector Search<span>Finds by meaning</span></div></div>
+  </div>
+  <aside class="notes">Three layers: our agent code on Bedrock, Atlas Agent Engine for runtime and memory, and MongoDB Atlas underneath.</aside>
+  <script type="application/json" class="trace">{
+    "0":[["composer","render slide 10 · stack diagram"],["session","agent: grocery-agent · model: Amazon Bedrock"]],
+    "1":[["session","connect Atlas Agent Engine · runtime + memory · RBAC policies loaded","ok"]],
+    "2":[["retriever","backing store: MongoDB Atlas · search index ✓ · vector index ✓ (1,024 dims)","ok"]]
+  }</script>
+</section>

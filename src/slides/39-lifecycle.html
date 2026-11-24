@@ -1,0 +1,68 @@
+<section class="slide s-cycle" data-title="Memory is a lifecycle">
+  <style>
+    .s-cycle .lanes{display:grid;grid-template-columns:repeat(3,1fr);gap:26px}
+    .s-cycle .lane{border:1px solid var(--green);border-radius:4px;padding:30px 30px 26px;height:536px;display:flex;flex-direction:column;background:rgba(2,38,52,.6)}
+    .s-cycle .op{align-self:flex-start;background:var(--green);color:var(--bg);font:400 32px var(--display);letter-spacing:.5px;padding:8px 46px;margin-bottom:22px}
+    .s-cycle .what{font:700 25px/1.3 var(--body)}
+    .s-cycle .ex{font-size:22px;line-height:1.35;color:#c9d6dc;margin-top:4px}
+    .s-cycle .viz{flex:1;margin:18px 0 0;position:relative}
+    .s-cycle .res{border-top:1px solid var(--line2);padding-top:16px;font:700 23px/1.3 var(--body);color:var(--green)}
+    .s-cycle .m{font:500 15px var(--mono);border:1px solid var(--line2);border-radius:6px;padding:8px 10px;background:var(--panel2);margin-bottom:8px}
+    .s-cycle .m.new{border-color:var(--green);box-shadow:0 0 16px rgba(0,237,100,.25)}
+    .s-cycle .m.old{color:var(--dim);text-decoration:line-through}
+    .s-cycle .m .t{color:var(--muted)}
+    /* reinforce: 10 copies collapse into one */
+    .s-cycle .copies{position:relative;height:118px}
+    .s-cycle .cp{position:absolute;left:calc(var(--c) * 50%);top:calc(var(--r) * 24px);width:48%;font:500 13px var(--mono);border:1px solid var(--line2);border-radius:4px;padding:2px 8px;background:var(--panel2);color:#c9d6dc;opacity:0;transition:left .6s cubic-bezier(.2,.8,.2,1),top .6s cubic-bezier(.2,.8,.2,1),opacity .4s,transform .3s;transition-delay:calc(var(--i) * 40ms)}
+    .s-cycle .copies.on .cp{opacity:1}
+    .s-cycle .copies.merged .cp{left:0;top:0;opacity:0;transition-delay:0s}
+    .s-cycle .one{font:500 15px var(--mono);border:2px solid var(--green);border-radius:6px;padding:8px 10px;background:rgba(0,237,100,.08);position:absolute;left:0;right:0;top:0}
+    .s-cycle .one b{color:var(--amber);font-weight:600}
+  </style>
+  <h2 class="build">Memory is a lifecycle</h2>
+  <div class="lanes">
+    <div class="lane">
+      <span class="op">ADD</span>
+      <div class="what">It’s new.</div>
+      <div class="ex">“I started baking gluten-free bread.”</div>
+      <div class="viz">
+        <div class="m new" data-in="1"><span class="t">+</span> “Bakes gluten-free bread” · v1</div>
+      </div>
+      <div class="res" data-in="1">A new memory.</div>
+    </div>
+    <div class="lane">
+      <span class="op">UPDATE</span>
+      <div class="what">It replaces something old.</div>
+      <div class="ex">“I’m looking for slow recipes now.”</div>
+      <div class="viz">
+        <div class="m" data-in="2" data-cls="2:old">“Quick meals” · v1 · is_latest: <span data-swap="2:false">true</span></div>
+        <div class="m new" data-in="2">“Slow recipes” · v2 · is_latest: true</div>
+      </div>
+      <div class="res" data-in="2">Replaces “I like quick meals”.</div>
+    </div>
+    <div class="lane">
+      <span class="op">REINFORCE</span>
+      <div class="what">It confirms what we know.</div>
+      <div class="ex">My gluten allergy, mentioned for the 10th time.</div>
+      <div class="viz">
+        <div class="copies" data-cls="3:on;4:merged">
+          <span class="cp" style="--i:0;--c:0;--r:0">#1 allergic to gluten</span><span class="cp" style="--i:1;--c:1;--r:0">#2 allergic to gluten</span>
+          <span class="cp" style="--i:2;--c:0;--r:1">#3 allergic to gluten</span><span class="cp" style="--i:3;--c:1;--r:1">#4 allergic to gluten</span>
+          <span class="cp" style="--i:4;--c:0;--r:2">#5 allergic to gluten</span><span class="cp" style="--i:5;--c:1;--r:2">#6 allergic to gluten</span>
+          <span class="cp" style="--i:6;--c:0;--r:3">#7 allergic to gluten</span><span class="cp" style="--i:7;--c:1;--r:3">#8 allergic to gluten</span>
+          <span class="cp" style="--i:8;--c:0;--r:4">#9 allergic to gluten</span><span class="cp" style="--i:9;--c:1;--r:4">#10 allergic to gluten</span>
+          <div class="one" data-in="4">“Allergic to gluten” · 1 doc<br>reinforcement_count: <b data-swap="4:10">1</b><br>confidence: <b data-swap="4:0.99">0.90</b></div>
+        </div>
+      </div>
+      <div class="res" data-in="4">One memory, more confident. Not 10 copies.</div>
+    </div>
+  </div>
+  <aside class="notes">Three decisions the consolidator makes for every new fact. Click 3 floods ten mentions, click 4 collapses them into one stronger memory.</aside>
+  <script type="application/json" class="trace">{
+    "0":[["composer","render slide 39 · consolidation: ADD · UPDATE · REINFORCE"]],
+    "1":[["consolidator","\"started baking gluten-free bread\" · nearest existing sim 0.31 → ADD","ok"]],
+    "2":[["consolidator","\"slow recipes now\" · matches v1 \"quick meals\" sim 0.91 · contradicts → UPDATE"],["consolidator","v1.is_latest=false · v2.previous_version_id=v1","ok"]],
+    "3":[["extractor","10 mentions of \"allergic to gluten\" across 10 sessions"]],
+    "4":[["consolidator","same fact, sim 0.99 → REINFORCE · $inc reinforcement_count (×10)","ok"],["consolidator","storage: 1 doc instead of 10 · confidence 0.90 → 0.99","ok"]]
+  }</script>
+</section>

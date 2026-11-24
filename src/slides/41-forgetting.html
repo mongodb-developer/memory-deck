@@ -1,0 +1,74 @@
+<section class="slide s-forget" data-title="Forgetting is part of memory" data-hook="forgetTTL">
+  <style>
+    .s-forget .cols{display:grid;grid-template-columns:1fr 1fr;gap:28px}
+    .s-forget .col{border:1px solid var(--green);border-radius:4px;padding:28px 32px;height:540px;display:flex;flex-direction:column;background:rgba(2,38,52,.6)}
+    .s-forget .op{align-self:flex-start;background:var(--green);color:var(--bg);font:400 28px var(--display);letter-spacing:.5px;padding:9px 40px;text-transform:uppercase;margin-bottom:24px}
+    .s-forget .q{font:700 28px var(--body)}
+    .s-forget .sub{font-size:22px;color:#c9d6dc;margin-top:12px}
+    .s-forget .viz{margin-top:24px;display:flex;flex-direction:column;gap:14px}
+    .s-forget .doc{font-size:17px;padding:16px 20px;transition:opacity .5s,filter .5s,transform .5s}
+    .s-forget .doc.gone{border-color:var(--red);transform:scale(.98)}
+    .s-forget .doc.gone, .s-forget .doc.gone span{color:#3d5a66 !important;text-decoration:line-through}
+    .s-forget .doc.gone::after{content:attr(data-gone);position:absolute;right:16px;top:50%;transform:translateY(-50%) rotate(-6deg);font:400 34px var(--display);color:var(--red);border:3px solid var(--red);padding:2px 12px;border-radius:6px;background:var(--panel);text-decoration:none}
+    .s-forget .idx{font:500 15px var(--mono);color:var(--muted);border-left:3px solid var(--amber);padding:4px 12px}
+    .s-forget .idx b{color:var(--amber);font-weight:600}
+    .s-forget .count{display:flex;align-items:baseline;gap:12px;font:500 15px var(--mono);color:var(--muted)}
+    .s-forget .count b{font:400 40px var(--display);color:var(--amber);letter-spacing:1px;min-width:250px}
+    .s-forget .count.zero b{color:var(--red)}
+    .s-forget .msg{font-size:21px;padding:12px 18px;align-self:flex-start}
+    .s-forget .cmd{font:500 15px var(--mono);color:var(--muted);border-left:3px solid var(--red);padding:4px 12px}
+    .s-forget .cmd b{color:var(--red);font-weight:600}
+  </style>
+  <h2 class="build">Forgetting is part of memory</h2>
+  <div class="cols">
+    <div class="col">
+      <span class="op">Short-lived: TTL index</span>
+      <div class="q">“I’m hosting friends on Saturday.”</div>
+      <div class="sub">Useful for a few days. Delete it after.</div>
+      <div class="viz">
+        <div class="doc" data-in="1" data-cls="2:gone" data-gone="EXPIRED">{ <span class="k">"type"</span>: <span class="s">"episodic"</span>,
+  <span class="k">"content"</span>: <span class="s">"Hosting friends Saturday"</span>,
+  <span class="k">"expires_at"</span>: <span class="n">ISODate("2026-12-06")</span> }</div>
+        <div class="idx" data-in="1">createIndex({ <b>expires_at</b>: 1 }, { <b>expireAfterSeconds</b>: 0 })</div>
+        <div class="count" data-in="1" data-cls="2:zero">time to live <b class="ttl">5d 00h 00m</b></div>
+      </div>
+    </div>
+    <div class="col">
+      <span class="op">On request: delete it</span>
+      <div class="q">“Please forget my old address.”</div>
+      <div class="sub">Delete it, explicitly.</div>
+      <div class="viz">
+        <div class="doc" data-in="3" data-cls="4:gone" data-gone="DELETED">{ <span class="k">"type"</span>: <span class="s">"semantic"</span>,
+  <span class="k">"content"</span>: <span class="s">"Lives at 12 Elm Street"</span>,
+  <span class="k">"expires_at"</span>: <span class="b">null</span> }</div>
+        <div class="msg me" data-in="3"><small>Me</small>“Please forget my old address.”</div>
+        <div class="cmd" data-in="4"><b>deleteMany</b>({ user_id, topic: "address" }) · all versions</div>
+      </div>
+    </div>
+  </div>
+  <aside class="notes">Click 2 fast-forwards the clock — MongoDB’s TTL monitor removes it, no code. Clicks 3–4: user asks, we delete every version, not just the latest.</aside>
+  <script>
+  (window.DeckHooks ||= {}).forgetTTL = {
+    apply(s, st, animate){
+      const el = s.querySelector('.ttl'); const total = 5 * 86400;
+      const fmt = sec => { const d = Math.floor(sec/86400), h = Math.floor(sec%86400/3600), m = Math.floor(sec%3600/60);
+        return `${d}d ${String(h).padStart(2,'0')}h ${String(m).padStart(2,'0')}m`; };
+      cancelAnimationFrame(s._raf);
+      const last = s._last; s._last = st;
+      if (st < 2){ el.textContent = fmt(total); return; }
+      if (!(animate && last === 1)){ el.textContent = fmt(0); return; }
+      const t0 = performance.now(), dur = 1600;
+      const tick = now => { const p = Math.min(1, (now - t0) / dur);
+        el.textContent = fmt(Math.round(total * (1 - p) ** 1.6)); if (p < 1) s._raf = requestAnimationFrame(tick); };
+      s._raf = requestAnimationFrame(tick);
+    }
+  };
+  </script>
+  <script type="application/json" class="trace">{
+    "0":[["composer","render slide 41 · lifecycle: expire + delete"]],
+    "1":[["extractor","\"hosting friends Saturday\" → episodic · expires_at = event + 1d"],["consolidator","insertOne · TTL index on expires_at (expireAfterSeconds: 0)"]],
+    "2":[["session","⏩ fast-forward 5 days"],["consolidator","TTL monitor: removed 1 expired memory · no app code","ok"]],
+    "3":[["session","user: \"Please forget my old address.\""],["extractor","intent: FORGET · topic=address · 2 versions found","warn"]],
+    "4":[["consolidator","deleteMany({topic: \"address\"}) → deletedCount: 2 · incl. history","ok"],["guard","forget request honored · not retrievable anymore","ok"]]
+  }</script>
+</section>

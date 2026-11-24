@@ -1,0 +1,40 @@
+<section class="slide s-ver" data-title="Agent Engine consolidates and keeps the history">
+  <style>
+    .s-ver .row{display:grid;grid-template-columns:1fr 70px 1fr;gap:20px;align-items:start}
+    .s-ver .doc{min-height:268px}
+    .s-ver .arrow{font:400 60px var(--display);color:var(--purple);text-align:center;padding-top:100px}
+    .s-ver .doc.stale{opacity:.55}
+    .s-ver .said{margin-top:26px;display:flex;gap:16px;align-items:center}
+    .s-ver .said .msg{font-size:22px}
+  </style>
+  <h2 class="build">Agent Engine consolidates &amp; keeps the history</h2>
+  <div class="row">
+    <div class="doc" data-cls="2:stale"><span class="lbl">memories · a year ago</span>{
+  <span class="k">"content"</span>: <span class="s">"I like quick meals."</span>,
+  <span class="k">"type"</span>: <span class="s">"semantic"</span>,
+  <span class="k">"version"</span>: <span class="n">1</span>,
+  <span class="k">"is_latest"</span>: <span class="b" data-swap="2:false">true</span>,
+  <span class="k">"reinforcement_count"</span>: <span class="n">4</span>
+}</div>
+    <div class="arrow" data-in="2">→</div>
+    <div class="doc type" data-in="2"><span class="lbl">memories · now</span>{
+  <span class="k">"content"</span>: <span class="s">"Looking for slow recipes now."</span>,
+  <span class="k">"type"</span>: <span class="s">"semantic"</span>,
+  <span class="k">"version"</span>: <span class="n">2</span>,
+  <span class="k">"is_latest"</span>: <span class="b">true</span>,
+  <span class="k">"previous_version_id"</span>: <span class="s">"v1"</span>,
+  <span class="k">"reinforcement_count"</span>: <span class="n" data-swap="3:2">1</span>
+}</div>
+  </div>
+  <div class="said">
+    <div class="msg me" data-in="1" data-out="3"><small>Me · today</small>“I’ve got time while waiting for Claude. I can cook a slow recipe.”</div>
+    <div class="msg me" data-in="3"><small>Me · next week</small>“Another slow-cooked one, please.”</div>
+  </div>
+  <aside class="notes">version · is_latest · previous_version_id · reinforcement_count. Nothing is overwritten — the history stays queryable.</aside>
+  <script type="application/json" class="trace">{
+    "0":[["composer","render slide 40"],["retriever","find({topic: \"meal_pace\", is_latest: true}) → 1 doc"]],
+    "1":[["extractor","new fact: \"prefers slow recipes\" · semantic · stated"],["consolidator","$vectorSearch existing memories → v1 \"I like quick meals.\" · sim 0.91"]],
+    "2":[["consolidator","decision: UPDATE (contradicts v1)"],["consolidator","updateOne(v1, {$set: {is_latest: false}}) · insertOne(v2)","ok"]],
+    "3":[["consolidator","decision: REINFORCE v2 · $inc reinforcement_count → 2 · no new doc","ok"]]
+  }</script>
+</section>

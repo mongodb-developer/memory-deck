@@ -1,0 +1,36 @@
+<section class="slide s-meet" data-title="Meet the grocery shopping agent">
+  <style>
+    .s-meet .cols{display:grid;grid-template-columns:860px 1fr;gap:60px}
+    .s-meet .chat{border:1px solid var(--line2);background:#011a25;padding:26px;display:flex;flex-direction:column;gap:16px;height:400px}
+    .s-meet .msg{font-size:24px;max-width:600px;padding:14px 20px}
+    .s-meet .msg.ag{background:#0b3b33;border-color:#14524a}
+    .s-meet .cap h3{font:400 30px var(--display);color:var(--green);text-transform:uppercase;margin:4px 0 22px}
+    .s-meet .cap .it{display:flex;align-items:center;gap:22px;margin-bottom:26px}
+    .s-meet .cap .sq{width:54px;height:68px;background:var(--green);color:var(--bg);display:grid;place-items:center;font:400 34px var(--display);flex:none}
+    .s-meet .cap b{font-size:26px}
+    .s-meet .cap .tool{display:block;font:500 15px var(--mono);color:var(--amber);margin-top:6px;font-weight:400}
+  </style>
+  <h2 class="build">Meet the grocery shopping agent</h2>
+  <div class="cols">
+    <div class="chat">
+      <div class="msg me" data-in="1">Create a shopping list for a quick dinner tonight.</div>
+      <div class="msg ag type" data-in="2">Two quick options: pasta with basil sauce, or stir-fry rice noodles. Which one should I add?</div>
+      <div class="msg me" data-in="3">The pasta. What’s my total?</div>
+      <div class="msg ag type" data-in="4">Added 2 items. Your cart total is €9.20.</div>
+    </div>
+    <div class="cap">
+      <h3>What it can do</h3>
+      <div class="it" data-in="2"><span class="sq">1</span><b>Plan a meal (reason)<span class="tool">plan_meal()</span></b></div>
+      <div class="it" data-in="4"><span class="sq">2</span><b>Find products by meaning<span class="tool">search_products() · $vectorSearch</span></b></div>
+      <div class="it" data-in="4"><span class="sq">3</span><b>Fill the cart<span class="tool">add_to_cart()</span></b></div>
+    </div>
+  </div>
+  <aside class="notes">Our running example. It reasons, finds products by meaning, and fills a cart — but so far it has no memory.</aside>
+  <script type="application/json" class="trace">{
+    "0":[["composer","render slide 09 · introducing grocery-agent"]],
+    "1":[["session","turn 1 · user: \"quick dinner tonight\""]],
+    "2":[["session","tool plan_meal(time<=20min) → 2 options"]],
+    "3":[["session","turn 2 · user picks pasta"]],
+    "4":[["retriever","search_products: $vectorSearch \"pasta with basil sauce\" → penne, basil pesto"],["session","add_to_cart ×2 → total €9.20","ok"]]
+  }</script>
+</section>

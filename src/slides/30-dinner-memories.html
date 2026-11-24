@@ -1,0 +1,41 @@
+<section class="slide s-found" data-title="Semantic search finds the dinner memories">
+  <style>
+    .s-found .req{display:inline-block;background:var(--green);color:var(--bg);padding:14px 22px;border-radius:4px;font:700 26px var(--body);margin-bottom:20px}
+    .s-found .pool{display:flex;flex-wrap:wrap;gap:10px;min-height:60px;padding:10px 12px;border:1px dashed var(--line2);border-radius:10px;margin-bottom:18px}
+    .s-found .pool:not(:has(.m)){display:none}
+    .s-found .cols{display:grid;grid-template-columns:1fr 1fr;gap:28px}
+    .s-found .col{border-radius:12px;padding:0 18px 16px;min-height:310px;display:flex;flex-direction:column;gap:10px}
+    .s-found .col header{margin:0 -18px 6px;padding:10px 18px;font:400 32px var(--display);letter-spacing:.5px;display:flex;justify-content:space-between;align-items:baseline}
+    .s-found .col header span{font:500 14px var(--mono);color:var(--muted)}
+    .s-found .found{border:2px solid var(--green);background:rgba(0,237,100,.06)} .s-found .found header{color:var(--green);border-bottom:1px solid rgba(0,237,100,.3)}
+    .s-found .out{border:1px solid var(--line2);background:var(--panel)} .s-found .out header{color:var(--muted);border-bottom:1px solid var(--line)}
+    .s-found .m{padding:9px 14px;border-radius:8px;border:1px solid var(--line2);background:var(--panel2);font-size:20px;display:flex;justify-content:space-between;gap:16px;align-items:baseline}
+    .s-found .m i{font:400 15px var(--mono);color:var(--muted);font-style:normal;white-space:nowrap}
+    .s-found .found .m{border-color:var(--green)} .s-found .found .m i{color:var(--green)}
+    .s-found .out .m{color:#9fb3bb}
+    .s-found .m.allergy.alarm{border:2px solid var(--red);color:var(--red);font-weight:700;box-shadow:0 0 20px rgba(255,105,96,.35)}
+    .s-found .m.allergy.alarm i{color:var(--red)}
+  </style>
+  <h2 class="build">Semantic search finds the dinner memories</h2>
+  <div class="req">Me: “Create a shopping list for a quick dinner tonight.”</div>
+  <div class="pool">
+    <div class="m" data-move="1:f-found">“I like quick meals.” <i>quick dinner ≈ quick meals · 0.86</i></div>
+    <div class="m" data-move="2:f-out">The 1-star matcha review <i>0.31</i></div>
+    <div class="m" data-move="1:f-found">“I loved the 20-minute stir-fry.” <i>a fast dinner · 0.81</i></div>
+    <div class="m" data-move="2:f-out">Olive oil from 3 months ago <i>0.44</i></div>
+    <div class="m" data-move="1:f-found">“I shop for two.” <i>dinner portions · 0.77</i></div>
+    <div class="m" data-move="2:f-out">Deliver on Saturday mornings <i>0.29</i></div>
+    <div class="m allergy" data-move="2:f-out" data-cls="3:alarm">Gluten allergy <i>0.12</i></div>
+  </div>
+  <div class="cols">
+    <div class="col found" id="f-found"><header>Found <span>limit: 3</span></header></div>
+    <div class="col out" id="f-out"><header>Left out <span>below threshold</span></header></div>
+  </div>
+  <aside class="notes">Search does its job: three great dinner memories. But look what’s in “left out”…</aside>
+  <script type="application/json" class="trace">{
+    "0":[["composer","render slide 30"],["retriever","$vectorSearch(query=\"quick dinner tonight\", numCandidates: 200, limit: 3)"]],
+    "1":[["retriever","→ quick meals 0.86 · 20-min stir-fry 0.81 · shop for two 0.77","ok"]],
+    "2":[["retriever","not returned: olive oil 0.44 · matcha 0.31 · Saturday delivery 0.29 · gluten allergy 0.12"]],
+    "3":[["guard","constraint \"Allergic to gluten\" missing from context","err"]]
+  }</script>
+</section>

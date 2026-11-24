@@ -1,0 +1,47 @@
+<section class="slide s-asm" data-title="Assemble the context deliberately">
+  <style>
+    .s-asm .row{display:grid;grid-template-columns:520px 1fr;gap:60px;margin-top:10px}
+    .s-asm .nums{display:flex;gap:60px}
+    .s-asm .nums b{display:block;font:400 150px/.9 var(--display)}
+    .s-asm .nums .a b{color:var(--green)} .s-asm .nums .z b{color:#3BC4F2}
+    .s-asm .nums span{font-size:24px}
+    .s-asm .why{margin-top:40px;font-size:24px;line-height:1.5;color:#b9c7cd}
+    .s-asm .pipe{border:1px solid var(--green);padding:30px 30px 24px}
+    .s-asm .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+    .s-asm .st{border:1px solid var(--green);color:var(--green);text-align:center;padding:20px 10px 14px;font:700 24px/1.2 var(--body);transition:background .3s,color .3s}
+    .s-asm .st small{display:block;font:500 15px var(--mono);margin-top:8px;opacity:.85}
+    .s-asm .st.lit{background:var(--green);color:var(--bg)}
+    .s-asm .pipe p{margin-top:24px;font-size:24px;text-align:center}
+    .s-asm .pipe code{font:400 24px var(--mono);color:var(--green)}
+    .s-asm .warn{margin-top:24px;border:1px solid #3BC4F2;padding:26px 30px;text-align:center;font:700 24px/1.4 var(--body)}
+  </style>
+  <h2 class="build">Assemble the context deliberately</h2>
+  <div class="row">
+    <div>
+      <div class="nums">
+        <div class="a"><b>30</b><span>memories retrieved</span></div>
+        <div class="z" data-in="3"><b data-swap="1:30;2:19;3:2">30</b><span>that matter</span></div>
+      </div>
+      <div class="why">More tokens = more cost<br>More tokens = slower answers<br>More noise = worse answers</div>
+    </div>
+    <div>
+      <div class="pipe">
+        <div class="steps">
+          <div class="st" data-cls="1:lit">Rank<small data-in="1">by score</small></div>
+          <div class="st" data-cls="2:lit">Remove duplicates<small data-in="2">30 → 19</small></div>
+          <div class="st" data-cls="3:lit">Fit the token budget<small data-in="3">19 → 2</small></div>
+        </div>
+        <p data-in="4"><b>In Agent Engine:</b> <code>build_context</code> does all three.</p>
+      </div>
+      <div class="warn" data-in="4">A tight budget can cut the allergy. Pinned constraints shouldn’t compete for space.</div>
+    </div>
+  </div>
+  <aside class="notes">Rank, dedupe, fit the budget — thirty candidates down to two. Then the warning: never let the budget decide whether the allergy makes it in.</aside>
+  <script type="application/json" class="trace">{
+    "0":[["composer","render slide 34"],["retriever","$vectorSearch(limit: 30) → 30 candidates · 3,410 tokens"]],
+    "1":[["retriever","build_context · rank by score × recency × confidence"]],
+    "2":[["retriever","build_context · dedupe (sim > 0.95) → 11 merged · 19 left"]],
+    "3":[["retriever","build_context · token_budget=400 → 2 memories · 188 tokens","ok"]],
+    "4":[["guard","pinned constraints reserved outside the budget","ok"]]
+  }</script>
+</section>

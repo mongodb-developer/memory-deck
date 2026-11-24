@@ -1,0 +1,29 @@
+<section class="slide s-poll" data-title="Quick poll: what should the agent remember?">
+  <style>
+    .s-poll .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+    .s-poll .card{height:168px;border:2px solid var(--green);border-radius:4px;display:grid;place-items:center;text-align:center;padding:0 28px;font-size:32px;line-height:1.25;position:relative;transition:opacity .45s ease,transform .45s cubic-bezier(.2,.8,.2,1),background .3s}
+    .s-poll .card .id{position:absolute;top:10px;left:14px;font:600 13px var(--mono);color:var(--dim);letter-spacing:1px}
+    .s-poll .vote{margin-top:26px;display:flex;align-items:center;gap:18px;font:600 26px var(--body);color:#fff}
+    .s-poll .vote .q{font:400 40px var(--display);color:var(--green);text-transform:uppercase}
+    .s-poll .vote .opt{font:600 16px var(--mono);letter-spacing:1px;padding:8px 14px;border:1px solid var(--line2);border-radius:999px;color:var(--muted)}
+    .s-poll .cards.listening .card{background:rgba(0,237,100,.05);animation:sp-listen 2.4s ease-in-out infinite}
+    .s-poll .cards.listening .card:nth-child(2){animation-delay:.4s} .s-poll .cards.listening .card:nth-child(3){animation-delay:.8s}
+    .s-poll .cards.listening .card:nth-child(4){animation-delay:1.2s} .s-poll .cards.listening .card:nth-child(5){animation-delay:1.6s} .s-poll .cards.listening .card:nth-child(6){animation-delay:2s}
+    @keyframes sp-listen{0%,100%{box-shadow:none}50%{box-shadow:0 0 24px rgba(0,237,100,.35)}}
+  </style>
+  <h2 class="build">Quick poll: what should the agent remember?</h2>
+  <div class="cards" data-cls="1:listening">
+    <div class="card" data-in="0" style="transition-delay:.05s"><span class="id">fact_01</span>“I like quick meals.”</div>
+    <div class="card" data-in="0" style="transition-delay:.15s"><span class="id">fact_02</span>“I shop for two.”</div>
+    <div class="card" data-in="0" style="transition-delay:.25s"><span class="id">fact_03</span>“I’m hosting friends on Saturday.”</div>
+    <div class="card" data-in="0" style="transition-delay:.35s"><span class="id">fact_04</span>“I need lemons tonight.”</div>
+    <div class="card" data-in="0" style="transition-delay:.45s"><span class="id">fact_05</span>“I just bought a blender.”</div>
+    <div class="card" data-in="0" style="transition-delay:.55s"><span class="id">fact_06</span>“I’m allergic to gluten.”</div>
+  </div>
+  <div class="vote" data-in="1"><span class="q">You’re the extractor.</span>For each one: <span class="opt">ALWAYS</span><span class="opt">YES, USEFUL</span><span class="opt">A FEW DAYS</span><span class="opt">NO</span></div>
+  <aside class="notes">Ask the room to vote on each statement: keep forever, keep, keep for a few days, or don’t keep. Next slide replays the answers.</aside>
+  <script type="application/json" class="trace">{
+    "0":[["composer","render slide 15 · poll"],["session","snapshot of last conversation → 6 candidate facts"]],
+    "1":[["extractor","LLM extractor paused · delegating classification to 600 humans","warn"],["session","collecting votes …"]]
+  }</script>
+</section>

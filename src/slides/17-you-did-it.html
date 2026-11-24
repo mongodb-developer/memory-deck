@@ -1,0 +1,21 @@
+<section class="slide s-did grid-bg" data-title="You just did what a memory system has to do">
+  <style>
+    .s-did .statement{height:620px}
+    .s-did .q{font-size:72px}
+    .s-did .sub{font:400 40px/1.35 var(--body);color:#e8eef0;margin-top:40px;max-width:1300px}
+    .s-did .tag{display:inline-block;font:600 16px var(--mono);letter-spacing:1px;vertical-align:middle;padding:4px 10px;border-radius:4px;margin-left:8px;color:var(--bg)}
+    .s-did .t-type{background:var(--blue)} .s-did .t-ttl{background:var(--amber)}
+    .s-did u{text-decoration:none;border-bottom:4px solid transparent;transition:border-color .4s}
+    .s-did .sub.mark u.u1{border-color:var(--blue)} .s-did .sub.mark u.u2{border-color:var(--amber)}
+  </style>
+  <div class="statement">
+    <div class="q build">You just did what a memory system has to do:</div>
+    <div class="sub" data-in="1" data-cls="2:mark">You decided <u class="u1">what kind of memory</u> each one is<span class="tag t-type" data-in="2">type</span>, and <u class="u2">how long it should live</u><span class="tag t-ttl" data-in="2">ttl</span>.</div>
+  </div>
+  <aside class="notes">Two decisions per fact: its type and its lifetime. That’s the whole job of extraction.</aside>
+  <script type="application/json" class="trace">{
+    "0":[["composer","render slide 17"],["session","votes received · 6/6 facts classified by audience","ok"]],
+    "1":[["extractor","diff(audience, extractor) → same buckets on 6/6 facts","ok"]],
+    "2":[["extractor","each decision = classify(type) + assign(expires_at)"]]
+  }</script>
+</section>

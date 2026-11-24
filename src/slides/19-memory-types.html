@@ -1,0 +1,31 @@
+<section class="slide s-types" data-title="4 types of long-term memory">
+  <style>
+    .s-types .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+    .s-types .t{border:2px solid var(--green);border-radius:4px;padding:20px 26px;min-height:156px;position:relative}
+    .s-types .t .pill{display:inline-block;background:var(--green);color:var(--bg);font:400 26px var(--display);padding:4px 22px;letter-spacing:.5px;text-transform:uppercase;margin-bottom:14px}
+    .s-types .t b{font:700 22px var(--body);display:block;margin-bottom:4px}
+    .s-types .t p{font-size:21px;line-height:1.4;color:#dfe8ec}
+    .s-types .t .ex{color:#fff}
+    .s-types .t .js{position:absolute;top:22px;right:24px;font:500 15px var(--mono);color:var(--muted)}
+    .s-types .t .js .s{color:var(--green)}
+    .s-types .short{margin-top:22px;font-size:24px;color:#e8eef0}
+    .s-types .short b{color:var(--blue)}
+  </style>
+  <h2 class="build">4 types of long-term memory</h2>
+  <div class="grid">
+    <div class="t" data-in="1"><span class="pill">Episodic</span><span class="js">type: <span class="s">"episodic"</span></span><b>Things that happened:</b><p class="ex">“Yesterday I rated matcha with 1 star.”</p></div>
+    <div class="t" data-in="2"><span class="pill">Semantic</span><span class="js">type: <span class="s">"semantic"</span></span><b>Facts and preferences:</b><p class="ex">“I’m allergic to gluten.” <span class="muted">(direct)</span><br>“Prefers oat milk.” <span class="muted">(generalized)</span></p></div>
+    <div class="t" data-in="3"><span class="pill">Procedural</span><span class="js">type: <span class="s">"procedural"</span></span><b>How to do a task:</b><p class="ex">“Deliver on Saturday mornings, never on weekdays.”</p></div>
+    <div class="t" data-in="4"><span class="pill">Taxonomic</span><span class="js">type: <span class="s">"taxonomic"</span></span><b>What terms mean:</b><p class="ex">“‘The usual order’ means bread, eggs and bananas.”</p></div>
+  </div>
+  <div class="short" data-in="5"><b>Short-term memory</b> is the current conversation. “Lemons tonight”, “I bought a blender” remain there.</div>
+  <aside class="notes">One example per type, all from the grocery agent. Short-term memory is just the conversation itself.</aside>
+  <script type="application/json" class="trace">{
+    "0":[["composer","render slide 19 · memory taxonomy"]],
+    "1":[["extractor","classify(\"rated matcha 1 star yesterday\") → episodic · occurred_at=2026-11-22"]],
+    "2":[["extractor","classify(\"allergic to gluten\") → semantic · direct"],["extractor","generalize(3× \"oat milk\" in cart) → semantic · \"Prefers oat milk.\""]],
+    "3":[["extractor","classify(\"deliver Saturday mornings\") → procedural · applies_to: checkout"]],
+    "4":[["extractor","classify(\"the usual order\") → taxonomic · alias → [bread, eggs, bananas]"]],
+    "5":[["session","\"lemons tonight\", \"bought a blender\" → stay in short-term (session only)","warn"]]
+  }</script>
+</section>

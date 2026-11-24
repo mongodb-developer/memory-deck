@@ -1,0 +1,46 @@
+<section class="slide s-emb" data-title="Vector embeddings capture meaning" data-hook="emb">
+  <style>
+    .s-emb .lead{font-size:30px;color:#e8eef0;margin-top:-14px;margin-bottom:46px}
+    .s-emb .flow{display:flex;align-items:center;gap:28px}
+    .s-emb .word{font:700 44px var(--body);color:var(--blue);padding:16px 26px;border:2px solid var(--blue);border-radius:10px;flex:none}
+    .s-emb .arr{font:400 54px var(--display);color:var(--muted);flex:none}
+    .s-emb .vec{font:400 34px var(--mono);color:var(--green);white-space:nowrap}
+    .s-emb .bars{display:flex;align-items:center;gap:3px;height:150px;margin:40px 0 18px;border-top:1px dashed var(--line2);border-bottom:1px dashed var(--line2)}
+    .s-emb .bar{flex:1;height:var(--v);background:var(--green);opacity:.85;border-radius:1px;transform:scaleY(0);transition:transform .35s cubic-bezier(.3,1.4,.5,1)}
+    .s-emb .bar.neg{background:var(--blue)}
+    .s-emb .bars.on .bar{transform:scaleY(1);transition-delay:calc(var(--i) * 9ms)}
+    .s-emb .cap{display:flex;justify-content:space-between;font-size:24px;color:var(--muted)}
+    .s-emb .cap b{color:#fff;font-weight:600}
+  </style>
+  <h2 class="build">Vector embeddings capture meaning</h2>
+  <div class="lead" data-in="0">A long array of numbers that captures what the text means.</div>
+  <div class="flow">
+    <div class="word" data-in="1">“weekend”</div>
+    <div class="arr" data-in="1">→</div>
+    <div class="vec type" data-in="2">[0.12, -0.48, 0.91, 0.07, -0.33, 0.64, …]</div>
+  </div>
+  <div class="bars" data-cls="2:on"></div>
+  <div class="cap"><span data-in="3">↑ each number is one <b>dimension of meaning</b></span><span data-in="3"><b>1,024</b> in total →</span></div>
+  <aside class="notes">An embedding model turns the word into 1,024 numbers. Each bar is one dimension; we only see the first hundred or so.</aside>
+  <script>
+  (window.DeckHooks ||= {}).emb = {
+    init(s){
+      const bars = s.querySelector('.bars'); const first = [0.12,-0.48,0.91,0.07,-0.33,0.64];
+      let seed = 11; const rnd = () => (seed = (seed * 9301 + 49297) % 233280) / 233280;
+      for (let i = 0; i < 128; i++){
+        const v = i < first.length ? first[i] : (rnd() * 2 - 1) * (0.25 + rnd() * 0.7);
+        const b = document.createElement('span'); b.className = 'bar' + (v < 0 ? ' neg' : '');
+        b.style.setProperty('--v', Math.max(4, Math.abs(v) * 72) + 'px'); b.style.setProperty('--i', i);
+        b.style.alignSelf = 'center'; b.style.transformOrigin = 'center';
+        bars.appendChild(b);
+      }
+    }
+  };
+  </script>
+  <script type="application/json" class="trace">{
+    "0":[["composer","render slide 28"]],
+    "1":[["retriever","embed(\"weekend\") · model voyage · input_type=query"]],
+    "2":[["retriever","→ float32[1024] · [0.12, -0.48, 0.91, 0.07, …] · ‖v‖ = 1.00","ok"]],
+    "3":[["consolidator","stored on each memory doc as field \"embedding\" · index memories_vec (cosine)"]]
+  }</script>
+</section>

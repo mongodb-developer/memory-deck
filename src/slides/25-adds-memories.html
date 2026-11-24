@@ -1,0 +1,60 @@
+<section class="slide s-grow" data-title="Every conversation adds memories" data-hook="grow">
+  <style>
+    .s-grow .cols{display:grid;grid-template-columns:repeat(4,1fr);gap:40px}
+    .s-grow .col header{border-bottom:1px solid var(--line2);padding-bottom:10px;margin-bottom:16px}
+    .s-grow .col header span{font:400 26px var(--display);color:#fff;letter-spacing:.5px;text-transform:uppercase}
+    .s-grow .col header b{display:block;font:400 92px/.95 var(--display);color:var(--green)}
+    .s-grow .col.w1 .chip{display:block;width:max-content;font-size:17px;padding:6px 12px;border:1px solid var(--line2);border-radius:3px;margin-bottom:9px;color:#dfe8ec}
+    .s-grow .boxes{display:flex;flex-wrap:wrap;gap:var(--g);align-content:flex-start;height:345px;overflow:hidden}
+    .s-grow .bx{height:var(--h);border:1px solid var(--line2);border-radius:2px;opacity:0;transform:scale(.4);transition:opacity .2s,transform .25s}
+    .s-grow .col.on .bx{opacity:1;transform:none;transition-delay:calc(var(--i) * var(--d))}
+    .s-grow .col.m6 .bx{border-color:#2b6e5b}
+  </style>
+  <h2 class="build">Every conversation adds memories</h2>
+  <div class="cols">
+    <div class="col w1"><header><span>Week 1</span><b>8</b></header>
+      <span class="chip">Returned the yogurt</span><span class="chip">Ordered lemons</span><span class="chip">Bought bananas</span><span class="chip">Hosting friends Saturday</span>
+      <span class="chip">Asked for coupons</span><span class="chip">Tried kombucha</span><span class="chip">Likes spicy food</span><span class="chip">Asked about wine</span>
+    </div>
+    <div class="col m1" data-in="1" data-n="16" data-h="30" data-gap="9" data-d="25"><header><span>Month 1</span><b class="ctr" data-to="40" data-at="1">40</b></header><div class="boxes"></div></div>
+    <div class="col m3" data-in="2" data-n="72" data-h="14" data-gap="6" data-d="8"><header><span>Month 3</span><b class="ctr" data-to="150" data-at="2">150</b></header><div class="boxes"></div></div>
+    <div class="col m6" data-in="3" data-n="230" data-h="7" data-gap="4" data-d="3"><header><span>Month 6</span><b class="ctr" data-to="400" data-suffix="+" data-at="3">400+</b></header><div class="boxes"></div></div>
+  </div>
+  <aside class="notes">A real user, a few chats a week. Click through the months — by month six it’s 400+ memories.</aside>
+  <script>
+  (window.DeckHooks ||= {}).grow = {
+    init(s){
+      let seed = 7; const rnd = () => (seed = (seed * 9301 + 49297) % 233280) / 233280;
+      s.querySelectorAll('.col[data-n]').forEach(col => {
+        const box = col.querySelector('.boxes'), n = +col.dataset.n, h = +col.dataset.h;
+        box.style.setProperty('--g', col.dataset.gap + 'px');
+        for (let i = 0; i < n; i++){
+          const b = document.createElement('span'); b.className = 'bx';
+          b.style.width = Math.round(h * (2.2 + rnd() * 2.6)) + 'px';
+          b.style.setProperty('--h', h + 'px'); b.style.setProperty('--i', i); b.style.setProperty('--d', col.dataset.d + 'ms');
+          box.appendChild(b);
+        }
+      });
+    },
+    apply(s, st, animate){
+      s.querySelectorAll('.ctr').forEach(el => {
+        const to = +el.dataset.to, suf = el.dataset.suffix || '', at = +el.dataset.at;
+        if (st >= at && animate && !el._done){
+          const t0 = performance.now();
+          const tick = now => { const p = Math.min(1, (now - t0) / 900);
+            el.textContent = Math.round(to * (1 - Math.pow(1 - p, 3))) + (p === 1 ? suf : '');
+            if (p < 1) requestAnimationFrame(tick); };
+          requestAnimationFrame(tick);
+        } else el.textContent = to + suf;
+        el._done = st >= at;
+      });
+    }
+  };
+  </script>
+  <script type="application/json" class="trace">{
+    "0":[["composer","render slide 25 · user u_4821 · grocery agent"],["extractor","week 1 · 3 sessions · 8 memories stored"]],
+    "1":[["extractor","month 1 · 12 sessions · 40 memories"]],
+    "2":[["extractor","month 3 · 38 sessions · 150 memories · ~45 tokens each"]],
+    "3":[["extractor","month 6 · 412 memories · 18,240 tokens if sent all at once","warn"]]
+  }</script>
+</section>

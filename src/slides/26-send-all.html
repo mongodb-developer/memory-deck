@@ -1,0 +1,65 @@
+<section class="slide s-all" data-title="Send them all?" data-hook="sendAll">
+  <style>
+    .s-all .grid{display:grid;grid-template-columns:520px 1fr;gap:56px}
+    .s-all .ask{background:var(--green);color:var(--bg);padding:18px 22px;border-radius:4px;font:700 28px/1.25 var(--body)}
+    .s-all .ask small{display:block;font:600 14px var(--mono);letter-spacing:1px;margin-bottom:6px}
+    .s-all .costs{margin-top:22px}
+    .s-all .costs div{font:400 40px var(--display);color:var(--green);padding:14px 0;border-bottom:1px solid var(--line2);text-transform:uppercase}
+    .s-all .costs .note{font:400 22px/1.4 var(--body);color:#fff;border:none;padding-top:18px;text-transform:none}
+    .s-all .costs .note b{font-weight:700}
+    .s-all .overflow,.s-all .window{display:flex;flex-wrap:wrap;gap:7px;align-content:flex-start}
+    .s-all .overflow{height:118px;overflow:hidden;padding:4px 14px}
+    .s-all .limit{display:flex;justify-content:flex-end;border-top:2px dashed var(--blue);margin:8px -10px 8px;font:400 22px var(--display);color:var(--blue);padding-top:2px;letter-spacing:.5px;text-transform:uppercase}
+    .s-all .window{border:2px solid var(--blue);border-radius:6px;padding:12px;height:262px;overflow:hidden}
+    .s-all .chip{font-size:15px;padding:6px 11px;border:1px solid var(--line2);border-radius:3px;color:#dfe8ec;opacity:0;transform:scale(.6);transition:opacity .25s, transform .3s cubic-bezier(.3,1.5,.5,1), background .3s, color .3s, border-color .3s}
+    .s-all .ctx.on .chip{opacity:1;transform:none;transition-delay:calc(var(--i) * 22ms)}
+    .s-all .overflow .chip{border-color:#183846;color:#58737e}
+    .s-all .ctx.cut .overflow .chip{opacity:.25;transition-delay:0s}
+    .s-all .chip.rel.hl{background:var(--green);color:var(--bg);border-color:var(--green);font-weight:600}
+    .s-all .chip.allergy.hl{opacity:1 !important;background:transparent;color:var(--red);border:2px solid var(--red);font-weight:700;box-shadow:0 0 20px rgba(255,105,96,.45)}
+  </style>
+  <h2 class="build">Send them all?</h2>
+  <div class="grid">
+    <div>
+      <div class="ask"><small>ME</small>“Create a shopping list for a quick dinner tonight.”</div>
+      <div class="costs">
+        <div data-in="1">More tokens, more cost</div>
+        <div data-in="2">More tokens, slower answers</div>
+        <div data-in="3">More noise, worse answers</div>
+        <div class="note" data-in="4"><b>Only 4 of these matter for dinner.</b><br>The allergy didn’t even fit.</div>
+      </div>
+    </div>
+    <div class="ctx" data-cls="1:on;4:cut">
+      <div class="overflow"></div>
+      <div class="limit">Context limit</div>
+      <div class="window"></div>
+    </div>
+  </div>
+  <aside class="notes">Click 1 floods the context. Click 3 lights up the 3 that matter. Click 4: the allergy was above the limit — it got truncated.</aside>
+  <script>
+  (window.DeckHooks ||= {}).sendAll = {
+    init(s){
+      const ovf = ['Allergic to gluten','Bought paper towels','Returned the yogurt','Tried kombucha','Asked about wine','Ordered lemons','Likes spicy food','Hosting friends Saturday','Bought rice','Asked for recipes','Prefers glass bottles','Rated the bread 5 stars','Bought frozen peas','Liked the curry kit','Skipped the cheese'];
+      const win = ['Asked for coupons','Skipped the avocados','*Likes quick meals','Bought bananas','Loved the pad thai','Deliver on Saturday mornings','Bought paper towels','Likes dark chocolate','Rated the matcha 1 star','Prefers oat milk','Always buys sparkling water','Asked about wine','*Shops for two','Bought frozen peas','Bought rice','Bought olive oil','Ordered pizza dough','Asked for coupons','Picks store brand','Bought coffee beans','Bought bananas','*Loved the 20-min stir-fry','Bought oats','Prefers oat milk','Tried the hummus','Likes crunchy granola'];
+      let i = 0;
+      const mk = (t, parent) => { const c = document.createElement('span'); c.className = 'chip';
+        if (t.startsWith('*')){ t = t.slice(1); c.classList.add('rel'); }
+        if (t === 'Allergic to gluten') c.classList.add('allergy');
+        c.textContent = t; c.style.setProperty('--i', i++); parent.appendChild(c); };
+      win.forEach(t => mk(t, s.querySelector('.window')));
+      ovf.forEach(t => mk(t, s.querySelector('.overflow')));
+    },
+    apply(s, st){
+      s.querySelectorAll('.chip.rel').forEach(c => c.classList.toggle('hl', st >= 3));
+      s.querySelectorAll('.chip.allergy').forEach(c => c.classList.toggle('hl', st >= 4));
+    }
+  };
+  </script>
+  <script type="application/json" class="trace">{
+    "0":[["composer","render slide 26 · user has 412 memories after 6 months"]],
+    "1":[["retriever","build_context(k=ALL) → 412 memories · 18,240 tokens"],["retriever","est. cost per request ×9.4 vs. top-k","warn"]],
+    "2":[["retriever","time-to-first-token 3.8 s (top-k: 0.6 s)","warn"]],
+    "3":[["retriever","relevance to \"quick dinner\": 3 of 412 above 0.75"]],
+    "4":[["retriever","context limit 8,000 → truncated 230 oldest memories","warn"],["guard","dropped: \"Allergic to gluten\" (oldest, most important)","err"]]
+  }</script>
+</section>

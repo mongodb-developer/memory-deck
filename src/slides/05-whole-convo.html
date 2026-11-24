@@ -1,0 +1,58 @@
+<section class="slide s-convo" data-title="Just send the whole conversation?">
+  <style>
+    .s-convo .board{position:relative;margin-top:6px}
+    .s-convo .row{display:flex;align-items:center;gap:14px;height:96px;margin-bottom:18px;padding-right:250px}
+    .s-convo .row .lbl{width:150px;font:400 32px var(--display);color:#cfd8dc;text-transform:uppercase;flex:none}
+    .s-convo .box{width:170px;height:86px;flex:none;display:flex;flex-direction:column;justify-content:center;text-align:center;
+      font-size:17px;line-height:1.25;padding:6px 10px;border-radius:2px;opacity:0;transform:translateY(10px);
+      transition:opacity .35s,transform .35s;transition-delay:calc(var(--i) * 120ms)}
+    .s-convo .box small{font-weight:700;font-size:17px}
+    .s-convo .box.me{background:var(--green);color:var(--bg)}
+    .s-convo .box.ag{border:1.5px solid var(--green);color:#fff} .s-convo .box.ag small{color:var(--green)}
+    .s-convo .wire{flex:1;position:relative;height:2px;background:var(--green);opacity:0;transition:opacity .4s .3s}
+    .s-convo .wire::after{content:"";position:absolute;right:-2px;top:-6px;border:7px solid transparent;border-left:10px solid var(--green);border-right:0}
+    .s-convo .wire span{position:absolute;right:16px;top:-28px;font:600 15px var(--mono);color:var(--amber)}
+    .s-convo .row.on .box,.s-convo .row.on .wire{opacity:1;transform:none}
+    .s-convo .row{opacity:.0;transition:opacity .3s} .s-convo .row.on{opacity:1}
+    .s-convo .llm{position:absolute;right:0;top:0;width:220px;height:324px;background:var(--green);color:var(--bg);display:grid;place-items:center;
+      font:400 64px var(--display)}
+    .s-convo .llm.pulse{animation:llmp .6s ease}
+    @keyframes llmp{0%{box-shadow:0 0 0 0 rgba(0,237,100,.6)}100%{box-shadow:0 0 0 24px rgba(0,237,100,0)}}
+    .s-convo .foot{font-size:30px;margin-top:22px}
+    .s-convo .foot b{font-weight:700}
+  </style>
+  <h2 class="build">Just send the whole conversation?</h2>
+  <div class="board">
+    <div class="row" data-cls="1:on">
+      <div class="lbl">Prompt 1</div>
+      <div class="box me" style="--i:0"><small>Me</small>I’m allergic to gluten.</div>
+      <div class="wire"><span>7 tok</span></div>
+    </div>
+    <div class="row" data-cls="2:on">
+      <div class="lbl">Prompt 2</div>
+      <div class="box me" style="--i:0"><small>Me</small>I’m allergic to gluten.</div>
+      <div class="box ag" style="--i:1"><small>Agent</small>I’ll keep that in mind.</div>
+      <div class="box me" style="--i:2"><small>Me</small>Dinner ideas?</div>
+      <div class="wire"><span>21 tok</span></div>
+    </div>
+    <div class="row" data-cls="3:on">
+      <div class="lbl">Prompt 3</div>
+      <div class="box me" style="--i:0"><small>Me</small>I’m allergic to gluten.</div>
+      <div class="box ag" style="--i:1"><small>Agent</small>I’ll keep that in mind.</div>
+      <div class="box me" style="--i:2"><small>Me</small>Dinner ideas?</div>
+      <div class="box ag" style="--i:3"><small>Agent</small>Gluten-free risotto?</div>
+      <div class="box me" style="--i:4"><small>Me</small>Add it to the cart.</div>
+      <div class="wire"><span>38 tok</span></div>
+    </div>
+    <div class="llm" data-cls="1:pulse;2:-pulse;3:pulse">LLM</div>
+  </div>
+  <div class="foot" data-in="4"><b>Every prompt resends the entire conversation.</b> And it grows with every turn.</div>
+  <aside class="notes">This works — the risotto is gluten-free. But count the boxes: every prompt carries everything before it.</aside>
+  <script type="application/json" class="trace">{
+    "0":[["composer","render slide 05 · strategy: resend full history"]],
+    "1":[["session","prompt 1 → LLM · history: 1 msg · 7 tokens"]],
+    "2":[["session","prompt 2 → LLM · history: 3 msgs · 21 tokens"]],
+    "3":[["session","prompt 3 → LLM · history: 5 msgs · 38 tokens"],["guard","constraint respected: gluten-free risotto","ok"]],
+    "4":[["retriever","projection: 200 turns ≈ 9,600 tokens per prompt · O(n) growth","warn"]]
+  }</script>
+</section>

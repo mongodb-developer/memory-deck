@@ -1,0 +1,40 @@
+<section class="slide s-sel" data-title="Select what to memorize">
+  <style>
+    .s-sel .cols{display:grid;grid-template-columns:repeat(4,1fr);gap:24px}
+    .s-sel .c .no{font:400 80px/.9 var(--display);color:var(--green);border-bottom:2px solid var(--green-d);padding-bottom:10px;margin-bottom:14px}
+    .s-sel .c b{font:700 26px var(--body);display:block}
+    .s-sel .c p{font-size:21px;color:#cfd8dc;margin-top:4px;line-height:1.35}
+    .s-sel .ex{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-top:34px}
+    .s-sel .box{border:2px solid var(--green);border-radius:4px;padding:16px 22px;text-align:center}
+    .s-sel .box.guess{border-color:var(--line2)}
+    .s-sel .box q{font-size:24px;display:block;quotes:none}
+    .s-sel .box .verdict{font:400 28px var(--display);color:var(--green);letter-spacing:.5px;margin-top:4px}
+    .s-sel .box.guess .verdict{color:var(--muted)}
+    .s-sel .checks{display:flex;justify-content:center;gap:10px;margin-top:10px;font:500 15px var(--mono)}
+    .s-sel .checks span{padding:3px 9px;border-radius:3px;border:1px solid var(--line2);color:var(--muted)}
+    .s-sel .checks .y{border-color:var(--green-d);color:var(--green)} .s-sel .checks .w{border-color:var(--amber);color:var(--amber)}
+  </style>
+  <h2 class="build">Select what to memorize</h2>
+  <div class="cols">
+    <div class="c" data-in="1"><div class="no">1</div><b>Durable?</b><p>Will it still be true next week?</p></div>
+    <div class="c" data-in="2"><div class="no">2</div><b>Relevant?</b><p>Does this agent need it?</p></div>
+    <div class="c" data-in="3"><div class="no">3</div><b>Confident?</b><p>How sure are we?</p></div>
+    <div class="c" data-in="4"><div class="no">4</div><b>Stated or guessed?</b><p>Did the user say it?</p></div>
+  </div>
+  <div class="ex">
+    <div class="box" data-in="5"><q>“I’m allergic to gluten.”</q><div class="verdict">STATED</div>
+      <div class="checks"><span class="y">durable ✓</span><span class="y">relevant ✓</span><span class="y">conf 0.98</span><span class="y">stated</span></div></div>
+    <div class="box guess" data-in="6"><q>“She probably doesn’t like matcha.”</q><div class="verdict">GUESSED</div>
+      <div class="checks"><span class="w">durable ?</span><span class="y">relevant ✓</span><span class="w">conf 0.41</span><span class="w">inferred</span></div></div>
+  </div>
+  <aside class="notes">Four questions the extractor asks before writing anything. Stated facts outrank guesses — store the guess, but flag it.</aside>
+  <script type="application/json" class="trace">{
+    "0":[["composer","render slide 20 · selection criteria"]],
+    "1":[["extractor","check durable: expected_lifetime > 7d ?"]],
+    "2":[["extractor","check relevant: matches agent scope \"groceries\" ?"]],
+    "3":[["extractor","check confident: LLM score ≥ 0.7 ?"]],
+    "4":[["extractor","check source: stated by user | inferred by model"]],
+    "5":[["extractor","\"I'm allergic to gluten.\" → store · stated: true · conf 0.98","ok"]],
+    "6":[["extractor","\"doesn't like matcha\" → inferred from 1-star rating · conf 0.41","warn"],["extractor","store as hint · stated: false · never overrides a stated fact"]]
+  }</script>
+</section>

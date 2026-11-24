@@ -1,0 +1,23 @@
+<section class="slide s-recap" data-title="Back to our 3 questions">
+  <style>
+    .s-recap .agenda{gap:14px}
+    .s-recap .agenda .item{padding:18px 26px;align-items:flex-start}
+    .s-recap .agenda .item b{font-size:40px}
+    .s-recap .agenda .item p{color:#e3ebee;font-size:22px;line-height:1.4;margin-top:6px}
+    .s-recap .agenda .item p .tick{color:var(--green);font-weight:700;margin-right:6px}
+  </style>
+  <h2 class="build">Back to our 3 questions</h2>
+  <div class="agenda" data-cls="1:is-1;2:-is-1;2:is-2;3:-is-2;3:is-3;4:-is-3">
+    <div class="item"><span class="num-badge">1</span><div><b>What’s worth remembering?</b><p data-in="1"><span class="tick">✓</span>Not everything. Keep durable facts, drop short-lived details. Agent Engine extracts by type, in the background.</p></div></div>
+    <div class="item"><span class="num-badge">2</span><div><b>The right memory at the right time?</b><p data-in="2"><span class="tick">✓</span>Search by meaning with vector search (or hybrid search) and pin the constraints.</p></div></div>
+    <div class="item"><span class="num-badge">3</span><div><b>How do we update and forget?</b><p data-in="3"><span class="tick">✓</span>Memory is a lifecycle. Keep version history. Expire short-lived data and explicitly delete everything the user asks to forget.</p></div></div>
+  </div>
+  <aside class="notes">One click per answer, then all three together.</aside>
+  <script type="application/json" class="trace">{
+    "0":[["composer","render slide 43 · recap"]],
+    "1":[["extractor","answer 1 · record_turn → snapshot → extract by type · async","ok"]],
+    "2":[["retriever","answer 2 · $vectorSearch / hybrid ($rankFusion) + pinned constraints","ok"]],
+    "3":[["consolidator","answer 3 · ADD/UPDATE/REINFORCE · is_latest · TTL · deleteMany","ok"]],
+    "4":[["session","3 of 3 problems solved","ok"]]
+  }</script>
+</section>

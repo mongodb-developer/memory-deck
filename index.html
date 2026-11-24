@@ -1,0 +1,1969 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Managing Memory for AI Agents</title>
+<!-- GENERATED from src/ by build.py — edit src/shell.html and src/slides/*.html, then run: python3 build.py -->
+<link rel="stylesheet" href="assets/fonts/fonts.css">
+<style>
+:root{
+  --bg:#001E2B; --panel:#022634; --panel2:#06303f; --line:#1c4252; --line2:#2b5566;
+  --green:#00ED64; --green-d:#00A35C; --lime:#C6F432; --white:#fff; --muted:#8aa1ab; --dim:#4f6c78;
+  --red:#FF6960; --amber:#FFC010; --blue:#9DD7FF; --purple:#E3A8FF;
+  --display:"Special Gothic Condensed One","Oswald","Arial Narrow",Impact,sans-serif;
+  --body:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"Source Code Pro",ui-monospace,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--white);font-family:var(--body);overflow:hidden}
+body{display:grid;place-items:center;cursor:default}
+
+/* ---------- 16:9 stage, scaled to fit ---------- */
+#stage{position:relative;width:1600px;height:900px;transform-origin:center center;flex:none;overflow:hidden;background:var(--bg)}
+.slide{position:absolute;inset:0;padding:64px 80px 0;display:none}
+.slide.active{display:block}
+.instant *, .instant{transition:none !important;animation-duration:0s !important}
+aside.notes{display:none}
+
+/* ---------- chrome: progress, status pill, footer, trace ---------- */
+#progress{position:absolute;top:0;left:0;height:4px;background:var(--green);transition:width .4s ease;z-index:5}
+#status{position:absolute;top:22px;right:28px;z-index:5;display:flex;align-items:center;gap:10px;
+  font:500 15px var(--mono);color:var(--muted);padding:7px 14px;border:1px solid var(--line);border-radius:999px;background:rgba(2,38,52,.85)}
+#status .dot{width:9px;height:9px;border-radius:50%;background:var(--green-d)}
+#status.busy .dot{background:var(--green);box-shadow:0 0 0 0 rgba(0,237,100,.6);animation:pulse 1s infinite}
+#status b{color:var(--white);font-weight:600}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(0,237,100,.55)}100%{box-shadow:0 0 0 10px rgba(0,237,100,0)}}
+
+#footer{position:absolute;left:80px;right:80px;bottom:22px;height:28px;display:flex;align-items:center;gap:40px;font-size:13px;color:#cfd8dc;z-index:4}
+#footer .logo{display:flex;align-items:center;gap:8px;font:600 21px var(--body);letter-spacing:-.3px;color:#fff}
+#footer .tag{font-size:11px;letter-spacing:.4px}
+#footer .num{margin-left:auto;font:500 13px var(--mono)}
+
+#trace{position:absolute;left:80px;right:80px;bottom:62px;height:118px;z-index:4;
+  border:1px solid var(--line);border-radius:10px;background:linear-gradient(180deg,rgba(1,22,32,.92),rgba(1,18,26,.96));
+  font:400 15px/22px var(--mono);padding:8px 16px;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;transition:opacity .3s}
+#trace.hidden{opacity:0}
+#trace .hdr{position:absolute;top:7px;right:14px;font-size:12px;color:var(--dim);letter-spacing:.5px}
+#trace .ln{white-space:nowrap;color:#c9d6dc;display:flex;gap:12px}
+#trace .ln .t{color:var(--dim)}
+#trace .ln .a{min-width:122px;font-weight:600}
+#trace .ln.warn .m{color:var(--amber)} #trace .ln.err .m{color:var(--red)} #trace .ln.ok .m{color:var(--green)}
+.a-composer{color:var(--blue)} .a-extractor{color:var(--green)} .a-retriever{color:var(--amber)}
+.a-consolidator{color:var(--purple)} .a-session{color:var(--muted)} .a-guard{color:var(--red)}
+
+/* typing caret */
+.typing-caret::after{content:"";display:inline-block;width:.08em;min-width:3px;height:.9em;margin-left:.06em;background:var(--green);vertical-align:-.08em;animation:blink .7s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+
+#blackout{position:fixed;inset:0;background:#000;z-index:50;display:none}
+#blackout.on{display:block}
+#help{position:fixed;left:16px;top:10px;font:12px var(--mono);color:var(--dim);z-index:40;transition:opacity 1s}
+
+/* ---------- shared type & primitives ---------- */
+.kicker{font:600 30px var(--body);color:var(--green)}
+h1,h2{font-family:var(--display);font-weight:400;color:var(--green);text-transform:uppercase;line-height:.92;letter-spacing:.5px}
+h2{font-size:64px;margin-bottom:36px}
+.mono{font-family:var(--mono)}
+.muted{color:var(--muted)}
+.hl-green{color:var(--green)} .hl-lime{color:var(--lime);font-weight:700} .hl-red{color:var(--red)} .hl-amber{color:var(--amber)}
+
+[data-in]{opacity:0;transform:translateY(14px);transition:opacity .45s ease,transform .45s cubic-bezier(.2,.8,.2,1)}
+[data-in].on{opacity:1;transform:none}
+
+/* chat bubbles */
+.msg{display:flex;flex-direction:column;max-width:640px;padding:16px 22px;border-radius:14px;font-size:26px;line-height:1.3}
+.msg small{font:600 13px var(--mono);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px}
+.msg.me{align-self:flex-end;background:var(--green);color:var(--bg)} .msg.me small{color:#00502a}
+.msg.ag{align-self:flex-start;background:var(--panel2);border:1px solid var(--line2)} .msg.ag small{color:var(--blue)}
+
+/* generic card / panel */
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:22px 26px}
+.panel h3{font:400 34px var(--display);color:var(--green);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.panel p{font-size:21px;line-height:1.4;color:#dfe8ec}
+
+/* JSON / code document */
+.doc{background:var(--panel);border:1px solid var(--line2);border-radius:12px;padding:20px 24px;font:400 21px/1.55 var(--mono);white-space:pre;position:relative}
+.doc .lbl{position:absolute;top:-12px;left:18px;background:var(--bg);padding:0 8px;font:600 13px var(--mono);color:var(--muted);letter-spacing:1px}
+.k{color:var(--blue)} .s{color:var(--green)} .n{color:var(--amber)} .b{color:var(--purple)} .p{color:var(--muted)}
+.swapped{animation:flash .9s ease}
+@keyframes flash{0%{background:rgba(255,105,96,.55)}100%{background:transparent}}
+
+/* numbered badge */
+.num-badge{display:inline-grid;place-items:center;width:54px;height:54px;border-radius:50%;background:var(--green);color:var(--bg);font:400 32px var(--display);flex:none}
+
+/* curved background grid (MongoDB template art) */
+.grid-bg::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;opacity:.55;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1600 900' fill='none' stroke='%2300A35C' stroke-opacity='.45' stroke-width='1.3'%3E%3Cpath d='M-200 120 Q800 -60 1800 120'/%3E%3Cpath d='M-200 260 Q800 60 1800 260'/%3E%3Cpath d='M-200 420 Q800 200 1800 420'/%3E%3Cpath d='M-200 600 Q800 360 1800 600'/%3E%3Cpath d='M-200 800 Q800 540 1800 800'/%3E%3Cpath d='M-200 1000 Q800 740 1800 1000'/%3E%3Cpath d='M800 -100 V1000'/%3E%3Cpath d='M640 -100 L560 1000'/%3E%3Cpath d='M960 -100 L1040 1000'/%3E%3Cpath d='M480 -100 L300 1000'/%3E%3Cpath d='M1120 -100 L1300 1000'/%3E%3Cpath d='M320 -100 L40 1000'/%3E%3Cpath d='M1280 -100 L1560 1000'/%3E%3Cpath d='M160 -100 L-220 1000'/%3E%3Cpath d='M1440 -100 L1820 1000'/%3E%3C/svg%3E") center/cover no-repeat}
+.grid-bg > *{position:relative;z-index:1}
+
+/* section divider: 01 / WHAT'S WORTH REMEMBERING? */
+.section-div{display:flex;flex-direction:column;justify-content:center;height:640px}
+.section-div .no{font:400 220px/.8 var(--display);color:var(--green);opacity:.9;margin-bottom:20px}
+.section-div h1{font-size:150px;line-height:.88;color:#fff}
+
+/* agenda: the 3 problems (reused on slides 7, 14, 24, 37). Add class "is-1/2/3" to .agenda to spotlight one */
+.agenda{display:flex;flex-direction:column;gap:18px;margin-top:10px}
+.agenda .item{display:flex;gap:26px;align-items:center;padding:20px 26px;border:1px solid var(--line);border-radius:12px;background:var(--panel);transition:opacity .4s,border-color .4s,background .4s}
+.agenda .item b{font:400 44px var(--display);text-transform:uppercase;letter-spacing:.5px;display:block}
+.agenda .item p{font-size:21px;color:var(--muted);margin-top:4px}
+.agenda.is-1 .item:not(:nth-child(1)), .agenda.is-2 .item:not(:nth-child(2)), .agenda.is-3 .item:not(:nth-child(3)){opacity:.35}
+.agenda.is-1 .item:nth-child(1), .agenda.is-2 .item:nth-child(2), .agenda.is-3 .item:nth-child(3){border-color:var(--green);background:rgba(0,237,100,.08)}
+.agenda.is-1 .item:nth-child(1) b, .agenda.is-2 .item:nth-child(2) b, .agenda.is-3 .item:nth-child(3) b{color:var(--green)}
+
+/* section takeaway */
+.takeaway{margin-top:30px;border:2px solid var(--green);border-radius:6px;padding:46px 56px;background:rgba(0,237,100,.05)}
+.takeaway .lbl{font:600 16px var(--mono);letter-spacing:2px;color:var(--muted);margin-bottom:18px}
+.takeaway .big{font:400 86px/.95 var(--display);color:var(--green);text-transform:uppercase}
+.takeaway p{font-size:28px;line-height:1.4;margin-top:28px;max-width:1150px}
+
+/* big centered statement */
+.statement{height:640px;display:flex;flex-direction:column;justify-content:center}
+.statement .big{font:400 140px/.9 var(--display);color:var(--green);text-transform:uppercase}
+.statement .q{font:600 64px/1.15 var(--body);color:#fff;max-width:1250px}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="progress"></div>
+  <div id="status"><span class="dot"></span><span id="statusText">agent idle</span></div>
+
+<!-- 01-title.html -->
+<section class="slide s-title grid-bg" data-title="Title">
+  <style>
+    .s-title .kicker{margin-top:120px;margin-bottom:22px}
+    .s-title h1{font-size:132px;line-height:.9}
+    .s-title .sub{font-size:30px;margin-top:34px;color:#e8eef0}
+  </style>
+  <div class="kicker build">Re:Invent 2026</div>
+  <h1><span class="build">Managing context &amp;</span><br><span class="build">memory</span><br><span class="build">for AI agents</span></h1>
+  <div class="sub" data-in="0">Storage, Retrieval and Lifecycle</div>
+  <aside class="notes">Welcome. Everything you’ll see on these slides is “written” by the same memory pipeline we’ll build today — watch the trace at the bottom.</aside>
+  <script type="application/json" class="trace">{
+    "0":[["session","open session reinvent-2026 · audience=~600"],
+         ["retriever","build_context(user=\"audience\") → 0 memories · first meeting"],
+         ["composer","render slide 01 \"Managing context & memory for AI agents\"","ok"]]
+  }</script>
+</section>
+<!-- 02-agent-ui.html -->
+<section class="slide s-agentui no-trace no-footer" data-title="Who is your speaker? (demo agent)" data-hook="agentLookup" data-steps="2">
+  <style>
+    .s-agentui{padding:0;background:#F5F2EB;color:#1f2a2e;font-family:var(--body)}
+    .s-agentui .leaf{fill:#00ED64}
+    /* top bar */
+    .s-agentui .bar{position:absolute;left:0;right:0;top:0;height:80px;display:flex;align-items:center;padding:0 48px;font-size:20px}
+    .s-agentui .brand{display:flex;align-items:center;gap:10px;font-weight:600;font-size:22px}
+    .s-agentui .ctr{position:absolute;left:50%;transform:translateX(-50%);color:#7a837f}
+    .s-agentui .pill{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:16px;color:#5d6763;padding:6px 14px;border:1px solid #e6e1d6;border-radius:999px;background:#faf8f3}
+    .s-agentui .pill i{width:8px;height:8px;border-radius:50%;background:#00ED64}
+    /* hero (idle) */
+    .s-agentui .hero{position:absolute;left:0;right:0;top:330px;display:flex;justify-content:center;align-items:center;gap:18px;
+      font:400 64px Georgia,"Times New Roman",serif;color:#1f2a2e;transition:opacity .4s, transform .5s}
+    .s-agentui.chat .hero{opacity:0;transform:translateY(-40px)}
+    /* composer box */
+    .s-agentui .box{position:absolute;left:220px;width:1160px;top:440px;height:132px;background:#fff;border-radius:18px;box-shadow:0 6px 30px rgba(40,30,10,.08);border:1px solid #ece7dc;
+      padding:22px 26px;transition:top .6s cubic-bezier(.2,.8,.2,1)}
+    .s-agentui.chat .box{top:752px;height:118px}
+    .s-agentui .ph{position:absolute;left:28px;top:22px;font-size:26px;color:#a7aca8}
+    .s-agentui .prompt{position:absolute;left:28px;top:22px;right:28px;font-size:26px;color:#1f2a2e;background:#fff;white-space:nowrap;transform:none}
+    .s-agentui .prompt.typing-caret::after{background:#1f2a2e}
+    .s-agentui.chat .prompt{display:none}
+    .s-agentui .chips{position:absolute;left:24px;bottom:18px;display:flex;gap:10px}
+    .s-agentui .chips span{font-size:16px;color:#5d6763;border:1px solid #e6e1d6;border-radius:999px;padding:5px 13px;display:flex;gap:7px;align-items:center;transition:all .3s}
+    .s-agentui .chips span.lit{border-color:#00A35C;color:#00684A;background:#e9f8ef}
+    .s-agentui .send{position:absolute;right:20px;bottom:16px;width:44px;height:44px;border-radius:12px;background:#e8e4da;display:grid;place-items:center;color:#fff;font-size:22px;transition:background .3s}
+    .s-agentui .send.ready{background:#1f2a2e}
+    /* thread */
+    .s-agentui:not(.chat) .thread{visibility:hidden}
+    .s-agentui .thread{position:absolute;left:220px;width:1160px;top:104px;display:flex;flex-direction:column;gap:16px}
+    .s-agentui .ev{opacity:0;transform:translateY(10px);transition:opacity .35s, transform .35s}
+    .s-agentui .ev.shown{opacity:1;transform:none}
+    .s-agentui .u{align-self:flex-end;background:#1f2a2e;color:#fff;font-size:24px;padding:12px 20px;border-radius:16px 16px 4px 16px}
+    .s-agentui .think{display:flex;align-items:center;gap:10px;font-size:18px;color:#7a837f}
+    .s-agentui .think b{font-weight:500;background:linear-gradient(90deg,#7a837f 0%,#c9cdc8 50%,#7a837f 100%);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:shimmer 1.2s linear infinite}
+    .s-agentui .think.done b{animation:none;background:none;color:#7a837f}
+    @keyframes shimmer{to{background-position:-200% 0}}
+    .s-agentui .tools{display:flex;flex-direction:column;gap:8px;border-left:2px solid #e2ddd1;margin-left:8px;padding-left:20px}
+    .s-agentui .tool{font-size:19px;display:grid;grid-template-columns:28px auto 1fr auto;align-items:center;column-gap:10px}
+    .s-agentui .tool .ic{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;background:#ece8de}
+    .s-agentui .tool .ic svg{width:16px;height:16px;fill:none;stroke:#1f2a2e;stroke-width:2}
+    .s-agentui .tool .nm{font-weight:600}
+    .s-agentui .tool code{font:400 17px var(--mono);color:#5d6763;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .s-agentui .tool .st{font:500 15px var(--mono);color:#a7aca8;white-space:nowrap}
+    .s-agentui .tool .st::before{content:"";display:inline-block;width:12px;height:12px;margin-right:8px;vertical-align:-1px;border:2px solid #c9cdc8;border-top-color:#00A35C;border-radius:50%;animation:spin .8s linear infinite}
+    .s-agentui .tool.done .st{color:#00684A}
+    .s-agentui .tool.done .st::before{animation:none;border:none;content:"✓";width:auto;height:auto;margin-right:6px;color:#00A35C;font-weight:700}
+    .s-agentui .tool .res{grid-column:2 / -1;font:400 16px var(--mono);color:#7a837f;margin-top:4px;opacity:0;transition:opacity .3s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .s-agentui .tool.done .res{opacity:1}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    /* answer */
+    .s-agentui .ans{display:grid;grid-template-columns:132px 1fr;gap:28px;align-items:center;background:#fff;border:1px solid #ece7dc;border-radius:18px;padding:24px 28px;box-shadow:0 4px 20px rgba(40,30,10,.05)}
+    .s-agentui .ans img{width:132px;height:132px;border-radius:50%;object-fit:cover;object-position:50% 20%;border:3px solid #00ED64}
+    .s-agentui .ans p{font-size:27px;line-height:1.38;min-height:75px}
+    .s-agentui .ans p.typing-caret::after{background:#00A35C}
+    .s-agentui .tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+    .s-agentui .tags span{font:500 16px var(--body);color:#00684A;background:#e9f8ef;border:1px solid #b7ebcc;border-radius:999px;padding:5px 13px;opacity:0;transform:scale(.7);transition:opacity .25s, transform .3s cubic-bezier(.3,1.6,.5,1)}
+    .s-agentui .tags.shown span{opacity:1;transform:none}
+    .s-agentui .tags.shown span:nth-child(2){transition-delay:.06s} .s-agentui .tags.shown span:nth-child(3){transition-delay:.12s}
+    .s-agentui .tags.shown span:nth-child(4){transition-delay:.18s} .s-agentui .tags.shown span:nth-child(5){transition-delay:.24s}
+    .s-agentui .tags.shown span:nth-child(6){transition-delay:.3s}
+    .s-agentui .meta{font:400 14px var(--mono);color:#a7aca8;margin-top:10px}
+  </style>
+
+  <div class="bar">
+    <span class="brand"><svg width="13" height="26" viewBox="0 0 14 28"><path class="leaf" d="M7 0c.6 2 2 3.6 3.3 5.2C13 8.6 14.4 12.3 13.8 16.6c-.6 4-2.8 6.6-6 8.4L7.4 28H6.5l-.4-3.1C2.6 23 .3 20.2.1 16 -.3 11.3 1.7 7.7 4.6 4.6 5.7 3.3 6.6 1.9 7 0z"/></svg>Agent</span>
+    <span class="ctr">Conference intro</span>
+    <span class="pill"><i></i>Atlas · memory on</span>
+  </div>
+
+  <div class="hero"><svg width="30" height="60" viewBox="0 0 14 28"><path class="leaf" d="M7 0c.6 2 2 3.6 3.3 5.2C13 8.6 14.4 12.3 13.8 16.6c-.6 4-2.8 6.6-6 8.4L7.4 28H6.5l-.4-3.1C2.6 23 .3 20.2.1 16 -.3 11.3 1.7 7.7 4.6 4.6 5.7 3.3 6.6 1.9 7 0z"/></svg>Ready when you are.</div>
+
+  <!-- ================= EDIT THE LOOKUP HERE ================= -->
+  <div class="thread">
+    <div class="u ev" data-t="0">Who is Pavel Duchovny?</div>
+    <div class="think ev" data-t="250"><b>Thinking…</b></div>
+    <div class="tools">
+      <div class="tool ev" data-t="700" data-run="1100">
+        <span class="ic"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-5-5"/></svg></span>
+        <span class="nm">Web Search</span><code>"Pavel Duchovny"</code><span class="st" data-done="3 results"></span>
+        <div class="res">mongodb.com/developer · linkedin.com · github.com</div>
+      </div>
+      <div class="tool ev" data-t="1950" data-run="900">
+        <span class="ic"><svg viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0-6 6c0 2 1 3.5 2 4.5V17h8v-3.5c1-1 2-2.5 2-4.5a6 6 0 0 0-6-6z"/><path d="M9 21h6"/></svg></span>
+        <span class="nm">Memory Fetch</span><code>build_context(user="audience", topic="speaker")</code><span class="st" data-done="2 memories"></span>
+        <div class="res">“Speaking at re:Invent 2026” · “Keep intros to one sentence”</div>
+      </div>
+      <div class="tool ev" data-t="3000" data-run="1000">
+        <span class="ic"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v12c0 1.7 3.1 3 7 3s7-1.3 7-3V6"/><path d="M5 12c0 1.7 3.1 3 7 3s7-1.3 7-3"/></svg></span>
+        <span class="nm">Atlas Query</span><code>db.speakers.findOne({ name: "Pavel Duchovny" })</code><span class="st" data-done="1 document"></span>
+        <div class="res">{ company: "MongoDB", role: "Developer Advocate", talk: "Managing Context &amp; Memory for AI Agents" }</div>
+      </div>
+    </div>
+    <div class="ans ev" data-t="4200">
+      <img src="assets/speaker.jpg" alt="Pavel Duchovny">
+      <div>
+        <p class="answer">Pavel Duchovny is a Developer Advocate at MongoDB who helps developers give AI agents long-term memory with Atlas and Vector Search, and he’s your speaker today.</p>
+        <div class="tags"><span>MongoDB</span><span>Developer Relations</span><span>AI Agents</span><span>Vector Search</span><span>Agent Memory</span><span>re:Invent 2026 speaker</span></div>
+        <div class="meta">3 tools · 2 memories · 1 document · answered in 4.6 s</div>
+      </div>
+    </div>
+  </div>
+  <!-- ======================================================== -->
+
+  <div class="box">
+    <span class="ph">Ask anything…</span>
+    <div class="prompt type" data-in="1">Who is Pavel Duchovny?</div>
+    <div class="chips"><span class="c-web">⌕ Web</span><span class="c-atlas">◆ Atlas</span><span class="c-mem">◎ Memory</span></div>
+    <div class="send" data-cls="1:ready;2:-ready">↑</div>
+  </div>
+
+  <aside class="notes">Click 1 types the question. Click 2 sends it: the agent searches the web, fetches memory and queries Atlas, then answers in one sentence. A click while it runs finishes it instantly.</aside>
+  <script>
+  (window.DeckHooks ||= {}).agentLookup = (() => {
+    let timers = [], untrack = null, answerCtl = null;
+    const q = (s, sel) => [...s.querySelectorAll(sel)];
+    function finalState(s){
+      q(s, '.ev').forEach(e => e.classList.add('shown'));
+      q(s, '.tool').forEach(t => { t.classList.add('done'); const st = t.querySelector('.st'); st.textContent = st.dataset.done; });
+      s.querySelector('.think').classList.add('done'); s.querySelector('.think b').textContent = 'Used 3 tools';
+      s.querySelector('.tags').classList.add('shown');
+      q(s, '.chips span').forEach(c => c.classList.remove('lit'));
+    }
+    function reset(s){
+      timers.forEach(clearTimeout); timers = [];
+      q(s, '.ev').forEach(e => e.classList.remove('shown'));
+      q(s, '.tool').forEach(t => { t.classList.remove('done'); t.querySelector('.st').textContent = 'running'; });
+      const th = s.querySelector('.think'); th.classList.remove('done'); th.querySelector('b').textContent = 'Thinking…';
+      s.querySelector('.tags').classList.remove('shown');
+      q(s, '.chips span').forEach(c => c.classList.remove('lit'));
+    }
+    function run(s){
+      reset(s);
+      const at = (ms, fn) => timers.push(setTimeout(fn, ms));
+      const ctl = { finish(){ timers.forEach(clearTimeout); timers = []; if (answerCtl) answerCtl.finish(); finalState(s); if (untrack){ untrack(); untrack = null; } } };
+      untrack = window.DeckTrack(ctl);
+      const chipFor = { 'Web Search': '.c-web', 'Memory Fetch': '.c-mem', 'Atlas Query': '.c-atlas' };
+      q(s, '.ev').forEach(e => at(+e.dataset.t, () => {
+        e.classList.add('shown');
+        if (e.classList.contains('tool')){
+          const chip = s.querySelector(chipFor[e.querySelector('.nm').textContent]);
+          chip && chip.classList.add('lit');
+          at(+e.dataset.run, () => { e.classList.add('done'); const st = e.querySelector('.st'); st.textContent = st.dataset.done; chip && chip.classList.remove('lit'); });
+        }
+        if (e.classList.contains('ans')){
+          const th = s.querySelector('.think'); th.classList.add('done'); th.querySelector('b').textContent = 'Used 3 tools';
+          answerCtl = window.DeckType([e.querySelector('.answer')], 70);
+          const len = e.querySelector('.answer').textContent.length;
+          at(len / 70 * 1000 + 150, () => { s.querySelector('.tags').classList.add('shown'); });
+          at(len / 70 * 1000 + 900, () => ctl.finish());
+        }
+      }));
+    }
+    return {
+      init(s){ reset(s); },
+      apply(s, st, animate){
+        s.classList.toggle('chat', st >= 2);
+        if (st < 2){ if (untrack){ untrack(); untrack = null; } reset(s); return; }
+        if (animate) run(s); else { reset(s); finalState(s); }
+      }
+    };
+  })();
+  </script>
+  <script type="application/json" class="trace">{
+    "0":[["composer","render slide 02 · demo agent UI · memory: ON"]],
+    "1":[["session","user typing…"]],
+    "2":[["session","tools: web_search · memory_fetch · atlas_query"]]
+  }</script>
+</section>
+<!-- 03-no-memory.html -->
+<section class="slide s-nomem" data-title="An agent without memory">
+  <style>
+    .s-nomem .chat{width:1040px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+    .s-nomem .divider{display:flex;align-items:center;gap:18px;font:600 15px var(--mono);color:var(--muted);letter-spacing:1px;margin:6px 0}
+    .s-nomem .divider::before,.s-nomem .divider::after{content:"";flex:1;border-top:1px dashed var(--line2)}
+    .s-nomem .divider .mem{color:var(--red)}
+    .s-nomem .stamp{position:absolute;right:130px;top:575px;font:400 64px var(--display);color:var(--red);border:5px solid var(--red);padding:6px 22px;border-radius:8px;transform:rotate(-7deg) scale(1.4) !important;opacity:0}
+    .s-nomem .stamp.on{transform:rotate(-7deg) scale(1) !important;opacity:1;transition:transform .25s cubic-bezier(.3,1.6,.5,1),opacity .15s}
+  </style>
+  <h2 class="build">An agent without memory</h2>
+  <div class="chat">
+    <div class="msg me" data-in="1"><small>Me</small>I’m allergic to gluten.</div>
+    <div class="msg ag type" data-in="2"><small>Agent</small>I’ll keep that in mind.</div>
+    <div class="divider" data-in="3">NEXT PROMPT · <span class="mem">memory: 0 items</span></div>
+    <div class="msg me" data-in="4"><small>Me</small>Suggest some dinner ideas.</div>
+    <div class="msg ag type" data-in="5"><small>Agent</small>Here’s a creamy carbonara pasta recipe…</div>
+  </div>
+  <div class="stamp" data-in="6">BUT PASTA HAS GLUTEN!</div>
+  <aside class="notes">“I’ll keep that in mind” — it can’t. Click through the second prompt and let the stamp land.</aside>
+  <script type="application/json" class="trace">{
+    "0":[["composer","render slide 03 · memory service: DISABLED for this demo","warn"]],
+    "1":[["session","turn 1 · user: \"I'm allergic to gluten.\""]],
+    "2":[["session","turn 1 · agent replied · 7 tokens"],["extractor","record_turn() not configured · nothing persisted","warn"]],
+    "3":[["session","new prompt · context window reset → 0 tokens","warn"]],
+    "4":[["retriever","build_context(\"dinner ideas\") → 0 memories"]],
+    "5":[["session","agent replied · recipe: carbonara (contains: wheat, egg)"]],
+    "6":[["guard","constraint violated: gluten · the agent never knew","err"]]
+  }</script>
+</section>
+<!-- 04-goldfish.html -->
+<section class="slide s-gold grid-bg" data-title="Without memory, a goldfish">
+  <style>
+    .s-gold .cols{display:grid;grid-template-columns:1fr 600px;gap:50px;margin-top:6px}
+    .s-gold h1{font-size:150px;line-height:.88}
+    .s-gold .fish-word{font:400 150px/.88 var(--display);color:var(--green);text-transform:uppercase;margin-top:26px}
+    .s-gold .body{font-size:30px;line-height:1.4;margin-top:34px;color:#eef3f5}
+    .s-gold figure img{width:600px;height:470px;object-fit:cover;display:block;border-radius:4px}
+    .s-gold figcaption{font:italic 400 21px var(--body);color:#dfe8ec;text-align:right;margin-top:14px}
+  </style>
+  <div class="cols">
+    <div>
+      <h1><span class="build">Without</span><br><span class="build">memory,</span></h1>
+      <div class="fish-word" data-in="1">a goldfish.</div>
+      <div class="body" data-in="2">Each LLM call starts from scratch.<br>The LLM doesn’t have <i>any</i> context about you.</div>
+    </div>
+    <figure data-in="0">
+      <img src="assets/goldfish.jpg" alt="A goldfish in a round glass bowl">
+      <figcaption data-in="3">Fun fact: goldfish actually remember for up to 3 months.</figcaption>
+    </figure>
+  </div>
+  <aside class="notes">Every LLM call is stateless. Then the fun fact — the goldfish is doing better than our agent.</aside>
+  <script type="application/json" class="trace">{
+    "0":[["composer","render slide 04 · loading image goldfish.jpg"]],
+    "1":[["session","LLM call #1 · stateless · prior context: none"]],
+    "2":[["retriever","build_context(user) → 0 memories · every call starts at 0 tokens","warn"]],
+    "3":[["guard","fact-check: goldfish memory ≈ 3 months · our agent: 0 seconds","err"]]
+  }</script>
+</section>
+<!-- 05-whole-convo.html -->
+<section class="slide s-convo" data-title="Just send the whole conversation?">
+  <style>
+    .s-convo .board{position:relative;margin-top:6px}
+    .s-convo .row{display:flex;align-items:center;gap:14px;height:96px;margin-bottom:18px;padding-right:250px}
+    .s-convo .row .lbl{width:150px;font:400 32px var(--display);color:#cfd8dc;text-transform:uppercase;flex:none}
+    .s-convo .box{width:170px;height:86px;flex:none;display:flex;flex-direction:column;justify-content:center;text-align:center;
+      font-size:17px;line-height:1.25;padding:6px 10px;border-radius:2px;opacity:0;transform:translateY(10px);
+      transition:opacity .35s,transform .35s;transition-delay:calc(var(--i) * 120ms)}
+    .s-convo .box small{font-weight:700;font-size:17px}
+    .s-convo .box.me{background:var(--green);color:var(--bg)}
+    .s-convo .box.ag{border:1.5px solid var(--green);color:#fff} .s-convo .box.ag small{color:var(--green)}
+    .s-convo .wire{flex:1;position:relative;height:2px;background:var(--green);opacity:0;transition:opacity .4s .3s}
+    .s-convo .wire::after{content:"";position:absolute;right:-2px;top:-6px;border:7px solid transparent;border-left:10px solid var(--green);border-right:0}
+    .s-convo .wire span{position:absolute;right:16px;top:-28px;font:600 15px var(--mono);color:var(--amber)}
+    .s-convo .row.on .box,.s-convo .row.on .wire{opacity:1;transform:none}
+    .s-convo .row{opacity:.0;transition:opacity .3s} .s-convo .row.on{opacity:1}
+    .s-convo .llm{position:absolute;right:0;top:0;width:220px;height:324px;background:var(--green);color:var(--bg);display:grid;place-items:center;
+      font:400 64px var(--display)}
+    .s-convo .llm.pulse{animation:llmp .6s ease}
+    @keyframes llmp{0%{box-shadow:0 0 0 0 rgba(0,237,100,.6)}100%{box-shadow:0 0 0 24px rgba(0,237,100,0)}}
+    .s-convo .foot{font-size:30px;margin-top:22px}
+    .s-convo .foot b{font-weight:700}
+  </style>
+  <h2 class="build">Just send the whole conversation?</h2>
+  <div class="board">
+    <div class="row" data-cls="1:on">
+      <div class="lbl">Prompt 1</div>
+      <div class="box me" style="--i:0"><small>Me</small>I’m allergic to gluten.</div>
+      <div class="wire"><span>7 tok</span></div>
+    </div>
+    <div class="row" data-cls="2:on">
+      <div class="lbl">Prompt 2</div>
+      <div class="box me" style="--i:0"><small>Me</small>I’m allergic to gluten.</div>
+      <div class="box ag" style="--i:1"><small>Agent</small>I’ll keep that in mind.</div>
+      <div class="box me" style="--i:2"><small>Me</small>Dinner ideas?</div>
+      <div class="wire"><span>21 tok</span></div>
+    </div>
+    <div class="row" data-cls="3:on">
+      <div class="lbl">Prompt 3</div>
+      <div class="box me" style="--i:0"><small>Me</small>I’m allergic to gluten.</div>
+      <div class="box ag" style="--i:1"><small>Agent</small>I’ll keep that in mind.</div>
+      <div class="box me" style="--i:2"><small>Me</small>Dinner ideas?</div>
+      <div class="box ag" style="--i:3"><small>Agent</small>Gluten-free risotto?</div>
+      <div class="box me" style="--i:4"><small>Me</small>Add it to the cart.</div>
+      <div class="wire"><span>38 tok</span></div>
+    </div>
+    <div class="llm" data-cls="1:pulse;2:-pulse;3:pulse">LLM</div>
+  </div>
+  <div class="foot" data-in="4"><b>Every prompt resends the entire conversation.</b> And it grows with every turn.</div>
+  <aside class="notes">This works — the risotto is gluten-free. But count the boxes: every prompt carries everything before it.</aside>
+  <script type="application/json" class="trace">{
+    "0":[["composer","render slide 05 · strategy: resend full history"]],
+    "1":[["session","prompt 1 → LLM · history: 1 msg · 7 tokens"]],
+    "2":[["session","prompt 2 → LLM · history: 3 msgs · 21 tokens"]],
+    "3":[["session","prompt 3 → LLM · history: 5 msgs · 38 tokens"],["guard","constraint respected: gluten-free risotto","ok"]],
+    "4":[["retriever","projection: 200 turns ≈ 9,600 tokens per prompt · O(n) growth","warn"]]
+  }</script>
+</section>
+<!-- 06-until-it-doesnt.html -->
+<section class="slide s-until" data-title="It works fine. Until it doesn’t.">
+  <style>
+    .s-until .head{display:flex;gap:60px;align-items:baseline;margin-bottom:40px}
+    .s-until .head h2{margin:0;font-size:86px}
+    .s-until .head .but{font:400 86px/.92 var(--display);color:var(--red);text-transform:uppercase}
+    .s-until .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:28px}
+    .s-until .card{border:1.5px solid var(--green);height:330px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:26px;border-radius:2px}
+    .s-until .card b{font:400 48px/1 var(--display);color:var(--green);text-transform:uppercase;margin-bottom:14px}
+    .s-until .card p{font-size:25px;line-height:1.35}
+    .s-until .card .meter{margin-top:22px;font:600 16px var(--mono);color:var(--amber)}
+  </style>
+  <div class="head"><h2 class="build">It works fine.</h2><div class="but" data-in="4">Until it doesn’t.</div></div>
+  <div class="cards">
+    <div class="card" data-in="1"><b>LLM context is limited</b><p>You’ll run out of space</p><div class="meter">context 7,912 / 8,000</div></div>
+    <div class="card" data-in="2"><b>What about past chats?</b><p>Most of them aren’t relevant to the current chat</p><div class="meter">214 past chats · 3 relevant</div></div>
+    <div class="card" data-in="3"><b>Things change</b><p>Love pasta but now shouldn’t eat it</p><div class="meter">2 facts in conflict</div></div>
+  </div>
+  <aside class="notes">Three ways “resend everything” breaks: space, relevance, and change. Land “until it doesn’t” last.</aside>
+  <script type="application/json" class="trace">{
+    "0":[["composer","render slide 06 · strategy: resend full history · status OK","ok"]],
+    "1":[["session","context window 99% full · next turn will be truncated","warn"]],
+    "2":[["retriever","loaded 214 past chats · 3 relevant to this request","warn"]],
+    "3":[["consolidator","conflict: \"loves pasta\" vs \"can't eat gluten\" · no way to resolve","warn"]],
+    "4":[["guard","strategy failed · need memory: select, retrieve, update","err"]]
+  }</script>
+</section>
+<!-- 07-three-problems.html -->
+<section class="slide s-agenda1" data-title="3 problems we’ll solve today">
+  <style>
+    .s-agenda1 .agenda .item{padding:26px 30px}
+    .s-agenda1 .agenda .item b{font-size:54px}
+  </style>
+  <h2 class="build">3 problems we’ll solve today</h2>
+  <div class="agenda">
+    <div class="item" data-in="1"><span class="num-badge">1</span><div><b>What’s worth remembering?</b></div></div>
+    <div class="item" data-in="2"><span class="num-badge">2</span><div><b>How do we find the right memory at the right time?</b></div></div>
+    <div class="item" data-in="3"><span class="num-badge">3</span><div><b>How do we update and forget?</b></div></div>
+  </div>
+  <aside class="notes">Our roadmap for the session. Each one maps to a stage of the memory pipeline.</aside>
+  <script type="application/json" class="trace">{
+    "0":[["composer","render slide 07 · planning session agenda"]],
+    "1":[["extractor","task 1 · selection: what's worth remembering"]],
+    "2":[["retriever","task 2 · retrieval: right memory, right time"]],
+    "3":[["consolidator","task 3 · lifecycle: update and forget"],["composer","plan ready · 3 tasks","ok"]]
+  }</script>
+</section>
+<!-- 08-scan-slides.html -->
+<section class="slide s-scan" data-title="Scan to access the slides">
+  <style>
+    .s-scan .wrap{display:grid;grid-template-columns:1fr 440px;gap:60px;align-items:center;height:620px}
+    .s-scan h1{font-size:150px;line-height:.9;text-transform:none}
+    .s-scan img{width:440px;height:440px;display:block}
+    .s-scan .url{font:600 22px var(--mono);color:var(--muted);margin-top:28px}
+  </style>
+  <div class="wrap">
+    <div><h1><span class="build">Scan to access</span><br><span class="build">the slides</span></h1></div>
+    <img data-in="0" src="assets/qr-slides.png" alt="QR code to access the slides">
+  </div>
+  <aside class="notes">Give people a few seconds to scan before moving on.</aside>
+  <script type="application/json" class="trace">{
+    "0":[["composer","render slide 08 · share link for these slides"],["session","waiting for audience to scan… (take your time)"]]
+  }</script>
+</section>
+<!-- 09-meet-agent.html -->
+<section class="slide s-meet" data-title="Meet the grocery shopping agent">
+  <style>
+    .s-meet .cols{display:grid;grid-template-columns:860px 1fr;gap:60px}
+    .s-meet .chat{border:1px solid var(--line2);background:#011a25;padding:26px;display:flex;flex-direction:column;gap:16px;height:400px}
+    .s-meet .msg{font-size:24px;max-width:600px;padding:14px 20px}
+    .s-meet .msg.ag{background:#0b3b33;border-color:#14524a}
+    .s-meet .cap h3{font:400 30px var(--display);color:var(--green);text-transform:uppercase;margin:4px 0 22px}
+    .s-meet .cap .it{display:flex;align-items:center;gap:22px;margin-bottom:26px}
+    .s-meet .cap .sq{width:54px;height:68px;background:var(--green);color:var(--bg);display:grid;place-items:center;font:400 34px var(--display);flex:none}
+    .s-meet .cap b{font-size:26px}
+    .s-meet .cap .tool{display:block;font:500 15px var(--mono);color:var(--amber);margin-top:6px;font-weight:400}
+  </style>
+  <h2 class="build">Meet the grocery shopping agent</h2>
+  <div class="cols">
+    <div class="chat">
+      <div class="msg me" data-in="1">Create a shopping list for a quick dinner tonight.</div>
+      <div class="msg ag type" data-in="2">Two quick options: pasta with basil sauce, or stir-fry rice noodles. Which one should I add?</div>
+      <div class="msg me" data-in="3">The pasta. What’s my total?</div>
+      <div class="msg ag type" data-in="4">Added 2 items. Your cart total is €9.20.</div>
+    </div>
+    <div class="cap">
+      <h3>What it can do</h3>
+      <div class="it" data-in="2"><span class="sq">1</span><b>Plan a meal (reason)<span class="tool">plan_meal()</span></b></div>
+      <div class="it" data-in="4"><span class="sq">2</span><b>Find products by meaning<span class="tool">search_products() · $vectorSearch</span></b></div>
+      <div class="it" data-in="4"><span class="sq">3</span><b>Fill the cart<span class="tool">add_to_cart()</span></b></div>
+    </div>
+  </div>
+  <aside class="notes">Our running example. It reasons, finds products by meaning, and fills a cart — but so far it has no memory.</aside>
+  <script type="application/json" class="trace">{
+    "0":[["composer","render slide 09 · introducing grocery-agent"]],
+    "1":[["session","turn 1 · user: \"quick dinner tonight\""]],
+    "2":[["session","tool plan_meal(time<=20min) → 2 options"]],
+    "3":[["session","turn 2 · user picks pasta"]],
+    "4":[["retriever","search_products: $vectorSearch \"pasta with basil sauce\" → penne, basil pesto"],["session","add_to_cart ×2 → total €9.20","ok"]]
+  }</script>
+</section>
+<!-- 10-tools.html -->
+<section class="slide s-tools" data-title="Before we start: the tools">
+  <style>
+    .s-tools .tiers{display:grid;grid-template-columns:330px 1fr;column-gap:30px}
+    .s-tools .lab b{display:block;font:400 34px/1 var(--display);color:var(--green);text-transform:uppercase}
+    .s-tools .lab span{display:block;font-size:19px;color:#dfe8ec;margin-top:6px;line-height:1.3}
+    .s-tools .lab{align-self:center}
+    .s-tools .top{border:1.5px dashed var(--muted);height:76px;display:grid;place-items:center;font:700 24px var(--body)}
+    .s-tools .tier{border:1px solid var(--line2);padding:12px;display:grid;grid-template-columns:repeat(3,1fr);gap:16px;background:rgba(2,38,52,.6)}
+    .s-tools .tier .c{height:84px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;border:1.5px solid var(--green);font:700 23px var(--body)}
+    .s-tools .tier .c span{font:400 17px var(--body);margin-top:4px}
+    .s-tools .tier .c .code{font:600 25px var(--mono)}
+    .s-tools .tier.solid .c{background:var(--green);color:var(--bg);border:none}
+    .s-tools .link{grid-column:2;height:52px;display:flex;align-items:center;gap:16px;padding-left:calc(50% - 2px)}
+    .s-tools .link i{display:block;width:2px;height:100%;background:var(--green);position:relative}
+    .s-tools .link i::after{content:"";position:absolute;bottom:-2px;left:-6px;border:7px solid transparent;border-top:9px solid var(--green);border-bottom:0}
+    .s-tools .link span{font:400 20px var(--display);color:var(--green);letter-spacing:.5px;text-transform:uppercase}
+    .s-tools .spacer{grid-column:1}
+    .s-tools .tier .c.lit{box-shadow:0 0 0 3px var(--amber),0 0 24px rgba(255,192,16,.4)}
+  </style>
+  <h2 class="build">Before we start: the tools</h2>
+  <div class="tiers">
+    <div class="lab"><b>The agent (code + Bedrock)</b></div>
+    <div class="top">Grocery Shopping Agent</div>
+
+    <div class="spacer" data-in="1"></div>
+    <div class="link" data-in="1"><i></i><span>Uses</span></div>
+    <div class="lab" data-in="1"><b>Atlas Agent Engine</b></div>
+    <div class="tier" data-in="1"><div class="c">Runs your agents</div><div class="c">Gives them memory</div><div class="c">Governed &amp; secure</div></div>
+
+    <div class="spacer" data-in="2"></div>
+    <div class="link" data-in="2"><i></i><span>Built on</span></div>
+    <div class="lab" data-in="2"><b>MongoDB Atlas</b><span>MongoDB in the cloud</span></div>
+    <div class="tier solid" data-in="2"><div class="c">Documents<span>Flexible, nested data</span></div><div class="c">MongoDB Search<span>Finds by keywords</span></div><div class="c">Vector Search<span>Finds by meaning</span></div></div>
+  </div>
+  <aside class="notes">Three layers: our agent code on Bedrock, Atlas Agent Engine for runtime and memory, and MongoDB Atlas underneath.</aside>
+  <script type="application/json" class="trace">{
+    "0":[["composer","render slide 10 · stack diagram"],["session","agent: grocery-agent · model: Amazon Bedrock"]],
+    "1":[["session","connect Atlas Agent Engine · runtime + memory · RBAC policies loaded","ok"]],
+    "2":[["retriever","backing store: MongoDB Atlas · search index ✓ · vector index ✓ (1,024 dims)","ok"]]
+  }</script>
+</section>
+<!-- 11-engine-memory.html -->
+<section class="slide s-eng" data-title="Agent Engine memory">
+  <style>
+    .s-eng .flow{display:grid;grid-template-columns:1fr 70px 1fr 70px 1fr;align-items:start;margin-top:10px}
+    .s-eng .st .box{background:var(--green);color:var(--bg);height:84px;display:grid;place-items:center;font:700 27px var(--body)}
+    .s-eng .st p{font-size:25px;line-height:1.35;margin-top:22px;padding-right:20px}
+    .s-eng .st code{display:block;font:500 17px var(--mono);color:var(--amber);margin-top:12px}
+    .s-eng .arr{height:84px;display:grid;place-items:center;font:400 40px var(--display);color:var(--green)}
+    .s-eng .home{margin-top:60px;border:1.5px solid var(--green);height:120px;display:grid;place-items:center;font:700 32px var(--body)}
+  </style>
+  <h2 class="build">Agent Engine memory</h2>
+  <div class="flow">
+    <div class="st" data-in="1"><div class="box">Saves each turn</div><p>Every message in the conversation is recorded.</p><code>record_turn()</code></div>
+    <div class="arr" data-in="2">→</div>
+    <div class="st" data-in="2"><div class="box">Decides what to keep</div><p>Durable facts become long-term memories.</p><code>extraction (async)</code></div>
+    <div class="arr" data-in="3">→</div>
+    <div class="st" data-in="3"><div class="box">Helps find them</div><p>The right memories reach your agent when it needs them.</p><code>build_context()</code></div>
+  </div>
+  <div class="home" data-in="4">All memories live in your MongoDB database in the cloud.</div>
+  <aside class="notes">Three jobs: save, decide, find. And the data is yours — it lives in your own Atlas database.</aside>
+  <script type="application/json" class="trace">{
+    "0":[["composer","render slide 11 · memory pipeline"]],
+    "1":[["session","record_turn(session_id, role=\"user\", text) → short-term memory"]],
+    "2":[["extractor","snapshot → classify → keep durable facts as long-term memories"]],
+    "3":[["retriever","build_context(query) → $vectorSearch → top-k memories"]],
+    "4":[["consolidator","storage: your cluster · db agent_memory · collections: turns, memories","ok"]]
+  }</script>
+</section>
+<!-- 12-architecture.html -->
+<section class="slide s-arch" data-title="How the demo fits together">
+  <style>
+    .s-arch .tiers{display:grid;grid-template-columns:330px 1fr;column-gap:30px}
+    .s-arch .lab b{display:block;font:400 34px/1 var(--display);color:var(--green);text-transform:uppercase}
+    .s-arch .lab span{display:block;font-size:19px;color:#dfe8ec;margin-top:6px;line-height:1.3}
+    .s-arch .lab{align-self:center}
+    .s-arch .top{border:1.5px dashed var(--muted);height:76px;display:grid;place-items:center;font:700 24px var(--body)}
+    .s-arch .tier{border:1px solid var(--line2);padding:12px;display:grid;grid-template-columns:repeat(3,1fr);gap:16px;background:rgba(2,38,52,.6)}
+    .s-arch .tier .c{height:84px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;border:1.5px solid var(--green);font:700 23px var(--body)}
+    .s-arch .tier .c span{font:400 17px var(--body);margin-top:4px}
+    .s-arch .tier .c .code{font:600 25px var(--mono)}
+    .s-arch .tier.solid .c{background:var(--green);color:var(--bg);border:none}
+    .s-arch .link{grid-column:2;height:52px;display:flex;align-items:center;gap:16px;padding-left:calc(50% - 2px)}
+    .s-arch .link i{display:block;width:2px;height:100%;background:var(--green);position:relative}
+    .s-arch .link i::after{content:"";position:absolute;bottom:-2px;left:-6px;border:7px solid transparent;border-top:9px solid var(--green);border-bottom:0}
+    .s-arch .link span{font:400 20px var(--display);color:var(--green);letter-spacing:.5px;text-transform:uppercase}
+    .s-arch .spacer{grid-column:1}
+    .s-arch .tier .c.lit{box-shadow:0 0 0 3px var(--amber),0 0 24px rgba(255,192,16,.4)}
+    .s-arch .top{font-size:23px}
+  </style>
+  <h2 class="build">How the demo fits together</h2>
+  <div class="tiers">
+    <div class="lab"><b>Google ADK</b><span>The agent framework</span></div>
+    <div class="top">Grocery Shopping Agent: agent loop, tools, session, 3 callbacks</div>
+
+    <div class="spacer" data-in="1"></div>
+    <div class="link" data-in="1"><i></i><span>Callbacks</span></div>
+    <div class="lab" data-in="1"><b>Atlas Agent Engine</b><span>The memory service<br>Called from the callbacks</span></div>
+    <div class="tier" data-in="1">
+      <div class="c" data-cls="2:lit;3:-lit"><span class="code">record_turn</span><span>Saves each turn</span></div>
+      <div class="c" data-cls="3:lit;4:-lit"><b>Extraction</b><span>Decides what to keep</span></div>
+      <div class="c" data-cls="4:lit;5:-lit"><span class="code">build_context</span><span>Finds what’s relevant</span></div>
+    </div>
+
+    <div class="spacer" data-in="5"></div>
+    <div class="link" data-in="5"><i></i><span>All data in</span></div>
+    <div class="lab" data-in="5"><b>MongoDB Atlas</b><span>Your own cluster</span></div>
+    <div class="tier solid" data-in="5"><div class="c">Memories<span>Written by Agent Engine</span></div><div class="c">Products<span>Searched by ADK tools</span></div><div class="c">Carts &amp; plans<span>Written by ADK tools</span></div></div>
+  </div>
+  <aside class="notes">ADK owns the loop; three callbacks call Agent Engine. Clicks 2–4 light up record_turn, extraction, build_context. Everything lands in your own Atlas cluster.</aside>
+  <script type="application/json" class="trace">{
+    "0":[["composer","render slide 12 · demo architecture"],["session","google.adk Agent(\"grocery-agent\") · tools: plan_meal, search_products, add_to_cart"]],
+    "1":[["session","register callbacks: after_model_callback, after_agent_callback, before_model_callback"]],
+    "2":[["session","after_model_callback → agent_engine.record_turn(session_id, turn)"]],
+    "3":[["extractor","after_agent_callback → extraction queued · runs async on snapshot"]],
+    "4":[["retriever","before_model_callback → build_context(query) → memories injected into prompt"]],
+    "5":[["consolidator","writes → atlas.agent_memory.memories","ok"],["retriever","ADK tools → atlas.grocery.products · carts · plans","ok"]]
+  }</script>
+</section>
+<!-- 13-section-01.html -->
+<section class="slide s-sec01 grid-bg" data-title="01 · What’s worth remembering?">
+  <div class="section-div">
+    <div class="no build">01</div>
+    <h1><span class="build">What’s worth</span><br><span class="build">remembering?</span></h1>
+  </div>
+  <aside class="notes">Section one: deciding what becomes a memory at all.</aside>
+  <script type="application/json" class="trace">{
+    "0":[["composer","render slide 13 · section 01 of 03"],["session","checkpoint: intro done · next: storage decisions","ok"]]
+  }</script>
+</section>
+<!-- 14-agenda-1.html -->
+<section class="slide s-ag1" data-title="3 problems · 1 of 3">
+  <h2 class="build">3 problems we’ll tackle today</h2>
+  <div class="agenda" data-cls="1:is-1">
+    <div class="item"><span class="num-badge">1</span><div><b>What’s worth remembering?</b><p>Decide what becomes a long-term memory, and what doesn’t.</p></div></div>
+    <div class="item"><span class="num-badge">2</span><div><b>How do we find the right memory at the right time?</b><p>Pick the few memories that matter for this request.</p></div></div>
+    <div class="item"><span class="num-badge">3</span><div><b>How do we update and forget?</b><p>Keep memories current, and let go of what’s stale.</p></div></div>
+  </div>
+  <aside class="notes">Quick recap of the map, then spotlight problem one.</aside>
+  <script type="application/json" class="trace">{
+    "0":[["composer","render slide 14 · agenda"],["retriever","recall(\"agenda\") → 3 open problems"]],
+    "1":[["composer","focus → problem 1: what’s worth remembering?","ok"]]
+  }</script>
+</section>
+<!-- 15-poll.html -->
+<section class="slide s-poll" data-title="Quick poll: what should the agent remember?">
+  <style>
+    .s-poll .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+    .s-poll .card{height:168px;border:2px solid var(--green);border-radius:4px;display:grid;place-items:center;text-align:center;padding:0 28px;font-size:32px;line-height:1.25;position:relative;transition:opacity .45s ease,transform .45s cubic-bezier(.2,.8,.2,1),background .3s}
+    .s-poll .card .id{position:absolute;top:10px;left:14px;font:600 13px var(--mono);color:var(--dim);letter-spacing:1px}
+    .s-poll .vote{margin-top:26px;display:flex;align-items:center;gap:18px;font:600 26px var(--body);color:#fff}
+    .s-poll .vote .q{font:400 40px var(--display);color:var(--green);text-transform:uppercase}
+    .s-poll .vote .opt{font:600 16px var(--mono);letter-spacing:1px;padding:8px 14px;border:1px solid var(--line2);border-radius:999px;color:var(--muted)}
+    .s-poll .cards.listening .card{background:rgba(0,237,100,.05);animation:sp-listen 2.4s ease-in-out infinite}
+    .s-poll .cards.listening .card:nth-child(2){animation-delay:.4s} .s-poll .cards.listening .card:nth-child(3){animation-delay:.8s}
+    .s-poll .cards.listening .card:nth-child(4){animation-delay:1.2s} .s-poll .cards.listening .card:nth-child(5){animation-delay:1.6s} .s-poll .cards.listening .card:nth-child(6){animation-delay:2s}
+    @keyframes sp-listen{0%,100%{box-shadow:none}50%{box-shadow:0 0 24px rgba(0,237,100,.35)}}
+  </style>
+  <h2 class="build">Quick poll: what should the agent remember?</h2>
+  <div class="cards" data-cls="1:listening">
+    <div class="card" data-in="0" style="transition-delay:.05s"><span class="id">fact_01</span>“I like quick meals.”</div>
+    <div class="card" data-in="0" style="transition-delay:.15s"><span class="id">fact_02</span>“I shop for two.”</div>
+    <div class="card" data-in="0" style="transition-delay:.25s"><span class="id">fact_03</span>“I’m hosting friends on Saturday.”</div>
+    <div class="card" data-in="0" style="transition-delay:.35s"><span class="id">fact_04</span>“I need lemons tonight.”</div>
+    <div class="card" data-in="0" style="transition-delay:.45s"><span class="id">fact_05</span>“I just bought a blender.”</div>
+    <div class="card" data-in="0" style="transition-delay:.55s"><span class="id">fact_06</span>“I’m allergic to gluten.”</div>
+  </div>
+  <div class="vote" data-in="1"><span class="q">You’re the extractor.</span>For each one: <span class="opt">ALWAYS</span><span class="opt">YES, USEFUL</span><span class="opt">A FEW DAYS</span><span class="opt">NO</span></div>
+  <aside class="notes">Ask the room to vote on each statement: keep forever, keep, keep for a few days, or don’t keep. Next slide replays the answers.</aside>
+  <script type="application/json" class="trace">{
+    "0":[["composer","render slide 15 · poll"],["session","snapshot of last conversation → 6 candidate facts"]],
+    "1":[["extractor","LLM extractor paused · delegating classification to 600 humans","warn"],["session","collecting votes …"]]
+  }</script>
+</section>
+<!-- 16-lifetimes.html -->
+<section class="slide s-life" data-title="You decided how long each one should live">
+  <style>
+    .s-life .pool{display:flex;flex-wrap:wrap;gap:12px;min-height:64px;padding:12px;border:1px dashed var(--line2);border-radius:12px;margin-bottom:22px;position:relative}
+    .s-life .pool::before{content:"INCOMING · your poll answers";position:absolute;top:-10px;left:14px;background:var(--bg);padding:0 8px;font:600 12px var(--mono);color:var(--muted);letter-spacing:1px}
+    .s-life .card{padding:11px 16px;border-radius:9px;background:var(--panel2);border:1px solid var(--line2);font-size:21px;white-space:nowrap}
+    .s-life .buckets{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+    .s-life .bucket{border-radius:12px;border:1px solid var(--line);background:var(--panel);min-height:300px;padding:0 14px 14px;display:flex;flex-direction:column;gap:10px}
+    .s-life .bucket header{margin:0 -14px 6px;padding:12px 14px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:baseline}
+    .s-life .bucket header b{font:400 30px var(--display);letter-spacing:.5px}
+    .s-life .bucket header span{font:500 13px var(--mono);color:var(--muted)}
+    .s-life .b-always header b{color:var(--green)} .s-life .b-always .card{border-color:var(--green);background:rgba(0,237,100,.1)}
+    .s-life .b-useful header b{color:var(--blue)} .s-life .b-useful .card{border-color:var(--blue)}
+    .s-life .b-days header b{color:var(--amber)} .s-life .b-days .card{border-color:var(--amber)}
+    .s-life .b-no header b{color:var(--muted)} .s-life .b-no .card{color:var(--dim);text-decoration:line-through;border-style:dashed}
+    .s-life .card.scan{box-shadow:0 0 0 2px var(--green),0 0 22px rgba(0,237,100,.35)}
+  </style>
+  <h2 class="build">You decided how long each one should live</h2>
+  <div class="pool">
+    <div class="card" data-move="1:bk-always" data-cls="1:scan;2:-scan">“I’m allergic to gluten.”</div>
+    <div class="card" data-move="2:bk-useful">“I like quick meals.”</div>
+    <div class="card" data-move="3:bk-useful">“I shop for two.”</div>
+    <div class="card" data-move="4:bk-days">“I’m hosting friends on Saturday.”</div>
+    <div class="card" data-move="5:bk-no">“I need lemons tonight.”</div>
+    <div class="card" data-move="6:bk-no">“I just bought a blender.”</div>
+  </div>
+  <div class="buckets">
+    <div class="bucket b-always" id="bk-always"><header><b>Always</b><span>ttl ∞</span></header></div>
+    <div class="bucket b-useful" id="bk-useful"><header><b>Yes, useful</b><span>until updated</span></header></div>
+    <div class="bucket b-days" id="bk-days"><header><b>For a few days</b><span>TTL index</span></header></div>
+    <div class="bucket b-no" id="bk-no"><header><b>No</b><span>not stored</span></header></div>
+  </div>
+  <aside class="notes">Replay the poll result. Each click, the extractor classifies one answer — same call the audience just made.</aside>
+  <script type="application/json" class="trace">{
+    "0":[["composer","render slide 16 · 6 candidate facts from the poll"],["extractor","snapshot ready · waiting to classify"]],
+    "1":[["extractor","classify(\"I'm allergic to gluten.\") → semantic · stated · conf 0.98 · ttl ∞","ok"]],
+    "2":[["extractor","classify(\"I like quick meals.\") → semantic · stated · conf 0.91"]],
+    "3":[["extractor","classify(\"I shop for two.\") → semantic · stated · conf 0.88"]],
+    "4":[["extractor","classify(\"hosting friends Saturday\") → episodic · expires_at=+5d"]],
+    "5":[["extractor","classify(\"I need lemons tonight.\") → transient · skip","warn"]],
+    "6":[["extractor","classify(\"bought a blender\") → low relevance to groceries · skip","warn"],["extractor","stored 4 · dropped 2 · async, user never waited","ok"]]
+  }</script>
+</section>
+<!-- 17-you-did-it.html -->
+<section class="slide s-did grid-bg" data-title="You just did what a memory system has to do">
+  <style>
+    .s-did .statement{height:620px}
+    .s-did .q{font-size:72px}
+    .s-did .sub{font:400 40px/1.35 var(--body);color:#e8eef0;margin-top:40px;max-width:1300px}
+    .s-did .tag{display:inline-block;font:600 16px var(--mono);letter-spacing:1px;vertical-align:middle;padding:4px 10px;border-radius:4px;margin-left:8px;color:var(--bg)}
+    .s-did .t-type{background:var(--blue)} .s-did .t-ttl{background:var(--amber)}
+    .s-did u{text-decoration:none;border-bottom:4px solid transparent;transition:border-color .4s}
+    .s-did .sub.mark u.u1{border-color:var(--blue)} .s-did .sub.mark u.u2{border-color:var(--amber)}
+  </style>
+  <div class="statement">
+    <div class="q build">You just did what a memory system has to do:</div>
+    <div class="sub" data-in="1" data-cls="2:mark">You decided <u class="u1">what kind of memory</u> each one is<span class="tag t-type" data-in="2">type</span>, and <u class="u2">how long it should live</u><span class="tag t-ttl" data-in="2">ttl</span>.</div>
+  </div>
+  <aside class="notes">Two decisions per fact: its type and its lifetime. That’s the whole job of extraction.</aside>
+  <script type="application/json" class="trace">{
+    "0":[["composer","render slide 17"],["session","votes received · 6/6 facts classified by audience","ok"]],
+    "1":[["extractor","diff(audience, extractor) → same buckets on 6/6 facts","ok"]],
+    "2":[["extractor","each decision = classify(type) + assign(expires_at)"]]
+  }</script>
+</section>
+<!-- 18-teach-agent.html -->
+<section class="slide s-teach" data-title="How do you teach an agent to do the same?">
+  <style>
+    .s-teach .statement{height:620px}
+    .s-teach .q{font:400 120px/.92 var(--display);color:var(--green);text-transform:uppercase;max-width:1300px}
+    .s-teach .handoff{margin-top:46px;display:flex;align-items:center;gap:22px;font:600 22px var(--mono)}
+    .s-teach .who{padding:12px 20px;border:1px solid var(--line2);border-radius:8px;background:var(--panel)}
+    .s-teach .who.llm{border-color:var(--green);color:var(--green)}
+    .s-teach .arr{color:var(--green);font-size:30px}
+  </style>
+  <div class="statement">
+    <div class="q build">How do you teach an agent to do the same?</div>
+    <div class="handoff" data-in="1"><span class="who">you · 600 humans</span><span class="arr">→</span><span class="who llm">extractor · LLM + rules</span></div>
+  </div>
+  <aside class="notes">Pause. The next slides turn the intuition into types and selection rules.</aside>
+  <script type="application/json" class="trace">{
+    "0":[["composer","render slide 18 · question"]],
+    "1":[["extractor","handoff: human judgement → extraction prompt + 4 memory types","ok"]]
+  }</script>
+</section>
+<!-- 19-memory-types.html -->
+<section class="slide s-types" data-title="4 types of long-term memory">
+  <style>
+    .s-types .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+    .s-types .t{border:2px solid var(--green);border-radius:4px;padding:20px 26px;min-height:156px;position:relative}
+    .s-types .t .pill{display:inline-block;background:var(--green);color:var(--bg);font:400 26px var(--display);padding:4px 22px;letter-spacing:.5px;text-transform:uppercase;margin-bottom:14px}
+    .s-types .t b{font:700 22px var(--body);display:block;margin-bottom:4px}
+    .s-types .t p{font-size:21px;line-height:1.4;color:#dfe8ec}
+    .s-types .t .ex{color:#fff}
+    .s-types .t .js{position:absolute;top:22px;right:24px;font:500 15px var(--mono);color:var(--muted)}
+    .s-types .t .js .s{color:var(--green)}
+    .s-types .short{margin-top:22px;font-size:24px;color:#e8eef0}
+    .s-types .short b{color:var(--blue)}
+  </style>
+  <h2 class="build">4 types of long-term memory</h2>
+  <div class="grid">
+    <div class="t" data-in="1"><span class="pill">Episodic</span><span class="js">type: <span class="s">"episodic"</span></span><b>Things that happened:</b><p class="ex">“Yesterday I rated matcha with 1 star.”</p></div>
+    <div class="t" data-in="2"><span class="pill">Semantic</span><span class="js">type: <span class="s">"semantic"</span></span><b>Facts and preferences:</b><p class="ex">“I’m allergic to gluten.” <span class="muted">(direct)</span><br>“Prefers oat milk.” <span class="muted">(generalized)</span></p></div>
+    <div class="t" data-in="3"><span class="pill">Procedural</span><span class="js">type: <span class="s">"procedural"</span></span><b>How to do a task:</b><p class="ex">“Deliver on Saturday mornings, never on weekdays.”</p></div>
+    <div class="t" data-in="4"><span class="pill">Taxonomic</span><span class="js">type: <span class="s">"taxonomic"</span></span><b>What terms mean:</b><p class="ex">“‘The usual order’ means bread, eggs and bananas.”</p></div>
+  </div>
+  <div class="short" data-in="5"><b>Short-term memory</b> is the current conversation. “Lemons tonight”, “I bought a blender” remain there.</div>
+  <aside class="notes">One example per type, all from the grocery agent. Short-term memory is just the conversation itself.</aside>
+  <script type="application/json" class="trace">{
+    "0":[["composer","render slide 19 · memory taxonomy"]],
+    "1":[["extractor","classify(\"rated matcha 1 star yesterday\") → episodic · occurred_at=2026-11-22"]],
+    "2":[["extractor","classify(\"allergic to gluten\") → semantic · direct"],["extractor","generalize(3× \"oat milk\" in cart) → semantic · \"Prefers oat milk.\""]],
+    "3":[["extractor","classify(\"deliver Saturday mornings\") → procedural · applies_to: checkout"]],
+    "4":[["extractor","classify(\"the usual order\") → taxonomic · alias → [bread, eggs, bananas]"]],
+    "5":[["session","\"lemons tonight\", \"bought a blender\" → stay in short-term (session only)","warn"]]
+  }</script>
+</section>
+<!-- 20-select.html -->
+<section class="slide s-sel" data-title="Select what to memorize">
+  <style>
+    .s-sel .cols{display:grid;grid-template-columns:repeat(4,1fr);gap:24px}
+    .s-sel .c .no{font:400 80px/.9 var(--display);color:var(--green);border-bottom:2px solid var(--green-d);padding-bottom:10px;margin-bottom:14px}
+    .s-sel .c b{font:700 26px var(--body);display:block}
+    .s-sel .c p{font-size:21px;color:#cfd8dc;margin-top:4px;line-height:1.35}
+    .s-sel .ex{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-top:34px}
+    .s-sel .box{border:2px solid var(--green);border-radius:4px;padding:16px 22px;text-align:center}
+    .s-sel .box.guess{border-color:var(--line2)}
+    .s-sel .box q{font-size:24px;display:block;quotes:none}
+    .s-sel .box .verdict{font:400 28px var(--display);color:var(--green);letter-spacing:.5px;margin-top:4px}
+    .s-sel .box.guess .verdict{color:var(--muted)}
+    .s-sel .checks{display:flex;justify-content:center;gap:10px;margin-top:10px;font:500 15px var(--mono)}
+    .s-sel .checks span{padding:3px 9px;border-radius:3px;border:1px solid var(--line2);color:var(--muted)}
+    .s-sel .checks .y{border-color:var(--green-d);color:var(--green)} .s-sel .checks .w{border-color:var(--amber);color:var(--amber)}
+  </style>
+  <h2 class="build">Select what to memorize</h2>
+  <div class="cols">
+    <div class="c" data-in="1"><div class="no">1</div><b>Durable?</b><p>Will it still be true next week?</p></div>
+    <div class="c" data-in="2"><div class="no">2</div><b>Relevant?</b><p>Does this agent need it?</p></div>
+    <div class="c" data-in="3"><div class="no">3</div><b>Confident?</b><p>How sure are we?</p></div>
+    <div class="c" data-in="4"><div class="no">4</div><b>Stated or guessed?</b><p>Did the user say it?</p></div>
+  </div>
+  <div class="ex">
+    <div class="box" data-in="5"><q>“I’m allergic to gluten.”</q><div class="verdict">STATED</div>
+      <div class="checks"><span class="y">durable ✓</span><span class="y">relevant ✓</span><span class="y">conf 0.98</span><span class="y">stated</span></div></div>
+    <div class="box guess" data-in="6"><q>“She probably doesn’t like matcha.”</q><div class="verdict">GUESSED</div>
+      <div class="checks"><span class="w">durable ?</span><span class="y">relevant ✓</span><span class="w">conf 0.41</span><span class="w">inferred</span></div></div>
+  </div>
+  <aside class="notes">Four questions the extractor asks before writing anything. Stated facts outrank guesses — store the guess, but flag it.</aside>
+  <script type="application/json" class="trace">{
+    "0":[["composer","render slide 20 · selection criteria"]],
+    "1":[["extractor","check durable: expected_lifetime > 7d ?"]],
+    "2":[["extractor","check relevant: matches agent scope \"groceries\" ?"]],
+    "3":[["extractor","check confident: LLM score ≥ 0.7 ?"]],
+    "4":[["extractor","check source: stated by user | inferred by model"]],
+    "5":[["extractor","\"I'm allergic to gluten.\" → store · stated: true · conf 0.98","ok"]],
+    "6":[["extractor","\"doesn't like matcha\" → inferred from 1-star rating · conf 0.41","warn"],["extractor","store as hint · stated: false · never overrides a stated fact"]]
+  }</script>
+</section>
+<!-- 21-implementation.html -->
+<section class="slide s-impl" data-title="Agent Engine implementation">
+  <style>
+    .s-impl .bg{font:400 26px var(--display);color:var(--muted);letter-spacing:.5px;text-align:center;margin:0 0 12px;text-transform:uppercase;transition:color .4s}
+    .s-impl .bg.lit{color:#fff}
+    .s-impl .flow{display:grid;grid-template-columns:1fr 34px 1fr 34px 1fr 34px 1fr;align-items:center}
+    .s-impl .box{height:76px;display:grid;place-items:center;border:2px solid var(--line2);color:var(--muted);font:700 26px var(--body);border-radius:3px;transition:background .4s,color .4s,border-color .4s,box-shadow .4s}
+    .s-impl .box.code{font:600 26px var(--mono)}
+    .s-impl .box.lit{background:var(--green);border-color:var(--green);color:var(--bg);box-shadow:0 0 26px rgba(0,237,100,.35)}
+    .s-impl .ar{text-align:center;color:var(--line2);font-size:26px;transition:color .4s}
+    .s-impl .ar.lit{color:var(--green)}
+    .s-impl .desc{display:grid;grid-template-columns:1fr 34px 1fr 34px 1fr 34px 1fr;margin-top:18px}
+    .s-impl .desc p{font-size:22px;line-height:1.35;color:#e8eef0;padding:0 8px}
+    .s-impl .desc code{display:block;margin-top:10px;font:400 15px/1.45 var(--mono);color:var(--muted);white-space:pre}
+    .s-impl .async{margin-top:40px;border:2px solid var(--green);border-radius:4px;padding:26px;text-align:center;font-size:28px}
+    .s-impl .async b{color:var(--green)}
+  </style>
+  <h2 class="build">Agent Engine implementation</h2>
+  <div class="bg" data-cls="2:lit">In the background, by Agent Engine</div>
+  <div class="flow">
+    <div class="box code" data-cls="1:lit">record_turn</div><div class="ar" data-cls="2:lit">→</div>
+    <div class="box" data-cls="2:lit">Snapshot</div><div class="ar" data-cls="3:lit">→</div>
+    <div class="box" data-cls="3:lit">Extract</div><div class="ar" data-cls="4:lit">→</div>
+    <div class="box" data-cls="4:lit">Store</div>
+  </div>
+  <div class="desc">
+    <p data-in="1">You record each turn as short-term memory<code>role · content · session_id</code></p><span></span>
+    <p data-in="2">After N messages, or when the chat goes idle<code>N=6 · idle 30s</code></p><span></span>
+    <p data-in="3">Categorize with an LLM<code>type · stated · conf · ttl</code></p><span></span>
+    <p data-in="4">Long-term memories in MongoDB, with vector embeddings<code>1,024 dims · $vectorSearch</code></p>
+  </div>
+  <div class="async" data-in="5"><b>Asynchronous:</b> the user never waits for memory to be persisted.</div>
+  <aside class="notes">Your code only calls record_turn. Snapshot, extraction and storage happen in the background inside Agent Engine.</aside>
+  <script type="application/json" class="trace">{
+    "0":[["composer","render slide 21 · pipeline"]],
+    "1":[["session","record_turn(session_id=\"s-481\", role=\"user\", content=\"I'm allergic to gluten.\") → 12 ms","ok"]],
+    "2":[["session","snapshot trigger: 6 messages since last snapshot → enqueue job"]],
+    "3":[["extractor","LLM extract(snapshot) → 4 candidates · 2 kept · 2 short-term"]],
+    "4":[["consolidator","embed(2 memories) → 1,024 dims · insertMany(memories) → acknowledged","ok"]],
+    "5":[["session","user-facing latency added by memory: 0 ms (async)","ok"]]
+  }</script>
+</section>
+<!-- 22-takeaway-1.html -->
+<section class="slide s-tk1" data-title="Section takeaway · 01">
+  <div class="takeaway">
+    <div class="lbl">SECTION TAKEAWAY</div>
+    <div class="big build">Remember by type and lifetime, not by default.</div>
+    <p data-in="1">Classify each piece of information by type, keep what’s durable and relevant, and know what was stated and what was guessed.</p>
+  </div>
+  <aside class="notes">Pause on the headline, then the one-sentence summary.</aside>
+  <script type="application/json" class="trace">{
+    "0":[["composer","render slide 22 · takeaway 1/3"]],
+    "1":[["consolidator","persist lesson → {type: \"semantic\", content: \"remember by type and lifetime\"}","ok"],["session","section 01 complete · next: retrieval"]]
+  }</script>
+</section>
+<!-- 23-section-02.html -->
+<section class="slide s-sec2 grid-bg" data-title="02 · The right memory at the right time">
+  <div class="section-div">
+    <div class="no build">02</div>
+    <h1><span class="build">The right memory</span><br><span class="build">at the right time</span></h1>
+  </div>
+  <aside class="notes">Section two. We know what to keep — now, out of hundreds of memories, which ones reach the agent?</aside>
+  <script type="application/json" class="trace">{
+    "0":[["composer","render slide 23 · section 02 \"The right memory at the right time\""],
+         ["retriever","warming up · $vectorSearch index memories_vec ready","ok"]]
+  }</script>
+</section>
+<!-- 24-agenda-2.html -->
+<section class="slide s-agenda2" data-title="3 problems we’ll tackle today (2/3)">
+  <h2 class="build">3 problems we’ll tackle today</h2>
+  <div class="agenda" data-cls="1:is-2">
+    <div class="item"><span class="num-badge">1</span><div><b>What’s worth remembering?</b><p>Decide what becomes a long-term memory, and what doesn’t.</p></div></div>
+    <div class="item"><span class="num-badge">2</span><div><b>How do we find the right memory at the right time?</b><p>Pick the few memories that matter for this request.</p></div></div>
+    <div class="item"><span class="num-badge">3</span><div><b>How do we update and forget?</b><p>Keep memories current, and let go of what’s stale.</p></div></div>
+  </div>
+  <aside class="notes">Problem one is done. Click to spotlight problem two: finding the right memory.</aside>
+  <script type="application/json" class="trace">{
+    "0":[["composer","render slide 24 · agenda"],["session","progress: problem 1/3 ✓","ok"]],
+    "1":[["composer","focus → problem 2: retrieval"]]
+  }</script>
+</section>
+<!-- 25-adds-memories.html -->
+<section class="slide s-grow" data-title="Every conversation adds memories" data-hook="grow">
+  <style>
+    .s-grow .cols{display:grid;grid-template-columns:repeat(4,1fr);gap:40px}
+    .s-grow .col header{border-bottom:1px solid var(--line2);padding-bottom:10px;margin-bottom:16px}
+    .s-grow .col header span{font:400 26px var(--display);color:#fff;letter-spacing:.5px;text-transform:uppercase}
+    .s-grow .col header b{display:block;font:400 92px/.95 var(--display);color:var(--green)}
+    .s-grow .col.w1 .chip{display:block;width:max-content;font-size:17px;padding:6px 12px;border:1px solid var(--line2);border-radius:3px;margin-bottom:9px;color:#dfe8ec}
+    .s-grow .boxes{display:flex;flex-wrap:wrap;gap:var(--g);align-content:flex-start;height:345px;overflow:hidden}
+    .s-grow .bx{height:var(--h);border:1px solid var(--line2);border-radius:2px;opacity:0;transform:scale(.4);transition:opacity .2s,transform .25s}
+    .s-grow .col.on .bx{opacity:1;transform:none;transition-delay:calc(var(--i) * var(--d))}
+    .s-grow .col.m6 .bx{border-color:#2b6e5b}
+  </style>
+  <h2 class="build">Every conversation adds memories</h2>
+  <div class="cols">
+    <div class="col w1"><header><span>Week 1</span><b>8</b></header>
+      <span class="chip">Returned the yogurt</span><span class="chip">Ordered lemons</span><span class="chip">Bought bananas</span><span class="chip">Hosting friends Saturday</span>
+      <span class="chip">Asked for coupons</span><span class="chip">Tried kombucha</span><span class="chip">Likes spicy food</span><span class="chip">Asked about wine</span>
+    </div>
+    <div class="col m1" data-in="1" data-n="16" data-h="30" data-gap="9" data-d="25"><header><span>Month 1</span><b class="ctr" data-to="40" data-at="1">40</b></header><div class="boxes"></div></div>
+    <div class="col m3" data-in="2" data-n="72" data-h="14" data-gap="6" data-d="8"><header><span>Month 3</span><b class="ctr" data-to="150" data-at="2">150</b></header><div class="boxes"></div></div>
+    <div class="col m6" data-in="3" data-n="230" data-h="7" data-gap="4" data-d="3"><header><span>Month 6</span><b class="ctr" data-to="400" data-suffix="+" data-at="3">400+</b></header><div class="boxes"></div></div>
+  </div>
+  <aside class="notes">A real user, a few chats a week. Click through the months — by month six it’s 400+ memories.</aside>
+  <script>
+  (window.DeckHooks ||= {}).grow = {
+    init(s){
+      let seed = 7; const rnd = () => (seed = (seed * 9301 + 49297) % 233280) / 233280;
+      s.querySelectorAll('.col[data-n]').forEach(col => {
+        const box = col.querySelector('.boxes'), n = +col.dataset.n, h = +col.dataset.h;
+        box.style.setProperty('--g', col.dataset.gap + 'px');
+        for (let i = 0; i < n; i++){
+          const b = document.createElement('span'); b.className = 'bx';
+          b.style.width = Math.round(h * (2.2 + rnd() * 2.6)) + 'px';
+          b.style.setProperty('--h', h + 'px'); b.style.setProperty('--i', i); b.style.setProperty('--d', col.dataset.d + 'ms');
+          box.appendChild(b);
+        }
+      });
+    },
+    apply(s, st, animate){
+      s.querySelectorAll('.ctr').forEach(el => {
+        const to = +el.dataset.to, suf = el.dataset.suffix || '', at = +el.dataset.at;
+        if (st >= at && animate && !el._done){
+          const t0 = performance.now();
+          const tick = now => { const p = Math.min(1, (now - t0) / 900);
+            el.textContent = Math.round(to * (1 - Math.pow(1 - p, 3))) + (p === 1 ? suf : '');
+            if (p < 1) requestAnimationFrame(tick); };
+          requestAnimationFrame(tick);
+        } else el.textContent = to + suf;
+        el._done = st >= at;
+      });
+    }
+  };
+  </script>
+  <script type="application/json" class="trace">{
+    "0":[["composer","render slide 25 · user u_4821 · grocery agent"],["extractor","week 1 · 3 sessions · 8 memories stored"]],
+    "1":[["extractor","month 1 · 12 sessions · 40 memories"]],
+    "2":[["extractor","month 3 · 38 sessions · 150 memories · ~45 tokens each"]],
+    "3":[["extractor","month 6 · 412 memories · 18,240 tokens if sent all at once","warn"]]
+  }</script>
+</section>
+<!-- 26-send-all.html -->
+<section class="slide s-all" data-title="Send them all?" data-hook="sendAll">
+  <style>
+    .s-all .grid{display:grid;grid-template-columns:520px 1fr;gap:56px}
+    .s-all .ask{background:var(--green);color:var(--bg);padding:18px 22px;border-radius:4px;font:700 28px/1.25 var(--body)}
+    .s-all .ask small{display:block;font:600 14px var(--mono);letter-spacing:1px;margin-bottom:6px}
+    .s-all .costs{margin-top:22px}
+    .s-all .costs div{font:400 40px var(--display);color:var(--green);padding:14px 0;border-bottom:1px solid var(--line2);text-transform:uppercase}
+    .s-all .costs .note{font:400 22px/1.4 var(--body);color:#fff;border:none;padding-top:18px;text-transform:none}
+    .s-all .costs .note b{font-weight:700}
+    .s-all .overflow,.s-all .window{display:flex;flex-wrap:wrap;gap:7px;align-content:flex-start}
+    .s-all .overflow{height:118px;overflow:hidden;padding:4px 14px}
+    .s-all .limit{display:flex;justify-content:flex-end;border-top:2px dashed var(--blue);margin:8px -10px 8px;font:400 22px var(--display);color:var(--blue);padding-top:2px;letter-spacing:.5px;text-transform:uppercase}
+    .s-all .window{border:2px solid var(--blue);border-radius:6px;padding:12px;height:262px;overflow:hidden}
+    .s-all .chip{font-size:15px;padding:6px 11px;border:1px solid var(--line2);border-radius:3px;color:#dfe8ec;opacity:0;transform:scale(.6);transition:opacity .25s, transform .3s cubic-bezier(.3,1.5,.5,1), background .3s, color .3s, border-color .3s}
+    .s-all .ctx.on .chip{opacity:1;transform:none;transition-delay:calc(var(--i) * 22ms)}
+    .s-all .overflow .chip{border-color:#183846;color:#58737e}
+    .s-all .ctx.cut .overflow .chip{opacity:.25;transition-delay:0s}
+    .s-all .chip.rel.hl{background:var(--green);color:var(--bg);border-color:var(--green);font-weight:600}
+    .s-all .chip.allergy.hl{opacity:1 !important;background:transparent;color:var(--red);border:2px solid var(--red);font-weight:700;box-shadow:0 0 20px rgba(255,105,96,.45)}
+  </style>
+  <h2 class="build">Send them all?</h2>
+  <div class="grid">
+    <div>
+      <div class="ask"><small>ME</small>“Create a shopping list for a quick dinner tonight.”</div>
+      <div class="costs">
+        <div data-in="1">More tokens, more cost</div>
+        <div data-in="2">More tokens, slower answers</div>
+        <div data-in="3">More noise, worse answers</div>
+        <div class="note" data-in="4"><b>Only 4 of these matter for dinner.</b><br>The allergy didn’t even fit.</div>
+      </div>
+    </div>
+    <div class="ctx" data-cls="1:on;4:cut">
+      <div class="overflow"></div>
+      <div class="limit">Context limit</div>
+      <div class="window"></div>
+    </div>
+  </div>
+  <aside class="notes">Click 1 floods the context. Click 3 lights up the 3 that matter. Click 4: the allergy was above the limit — it got truncated.</aside>
+  <script>
+  (window.DeckHooks ||= {}).sendAll = {
+    init(s){
+      const ovf = ['Allergic to gluten','Bought paper towels','Returned the yogurt','Tried kombucha','Asked about wine','Ordered lemons','Likes spicy food','Hosting friends Saturday','Bought rice','Asked for recipes','Prefers glass bottles','Rated the bread 5 stars','Bought frozen peas','Liked the curry kit','Skipped the cheese'];
+      const win = ['Asked for coupons','Skipped the avocados','*Likes quick meals','Bought bananas','Loved the pad thai','Deliver on Saturday mornings','Bought paper towels','Likes dark chocolate','Rated the matcha 1 star','Prefers oat milk','Always buys sparkling water','Asked about wine','*Shops for two','Bought frozen peas','Bought rice','Bought olive oil','Ordered pizza dough','Asked for coupons','Picks store brand','Bought coffee beans','Bought bananas','*Loved the 20-min stir-fry','Bought oats','Prefers oat milk','Tried the hummus','Likes crunchy granola'];
+      let i = 0;
+      const mk = (t, parent) => { const c = document.createElement('span'); c.className = 'chip';
+        if (t.startsWith('*')){ t = t.slice(1); c.classList.add('rel'); }
+        if (t === 'Allergic to gluten') c.classList.add('allergy');
+        c.textContent = t; c.style.setProperty('--i', i++); parent.appendChild(c); };
+      win.forEach(t => mk(t, s.querySelector('.window')));
+      ovf.forEach(t => mk(t, s.querySelector('.overflow')));
+    },
+    apply(s, st){
+      s.querySelectorAll('.chip.rel').forEach(c => c.classList.toggle('hl', st >= 3));
+      s.querySelectorAll('.chip.allergy').forEach(c => c.classList.toggle('hl', st >= 4));
+    }
+  };
+  </script>
+  <script type="application/json" class="trace">{
+    "0":[["composer","render slide 26 · user has 412 memories after 6 months"]],
+    "1":[["retriever","build_context(k=ALL) → 412 memories · 18,240 tokens"],["retriever","est. cost per request ×9.4 vs. top-k","warn"]],
+    "2":[["retriever","time-to-first-token 3.8 s (top-k: 0.6 s)","warn"]],
+    "3":[["retriever","relevance to \"quick dinner\": 3 of 412 above 0.75"]],
+    "4":[["retriever","context limit 8,000 → truncated 230 oldest memories","warn"],["guard","dropped: \"Allergic to gluten\" (oldest, most important)","err"]]
+  }</script>
+</section>
+<!-- 27-keyword-vs-semantic.html -->
+<section class="slide s-kw" data-title="Keyword search vs. semantic search">
+  <style>
+    .s-kw .req{display:inline-block;background:var(--green);color:var(--bg);padding:14px 22px;border-radius:4px;font:700 28px var(--body);margin-bottom:34px}
+    .s-kw .row{display:grid;grid-template-columns:470px 1fr;gap:56px;align-items:start}
+    .s-kw .mem{position:relative;overflow:hidden}
+    .s-kw .mem .lbl{font:600 14px var(--mono);letter-spacing:1px;color:var(--muted);margin-bottom:10px}
+    .s-kw .mem .txt{font:600 30px/1.3 var(--body)}
+    .s-kw .mem .w{border-radius:3px;transition:background .3s,color .3s}
+    .s-kw .mem.kw .w{background:rgba(255,105,96,.18);color:#ffb4ae}
+    .s-kw .mem.sem .w.hit{background:var(--green);color:var(--bg)}
+    .s-kw .mem.kw::after{content:"";position:absolute;top:0;bottom:0;width:80px;left:-80px;background:linear-gradient(90deg,transparent,rgba(255,192,16,.35),transparent);animation:scan 1s ease 1}
+    @keyframes scan{to{left:110%}}
+    .s-kw .lanes{display:flex;flex-direction:column;gap:20px}
+    .s-kw .lane{display:grid;grid-template-columns:1fr 300px;border:1px solid var(--line2);border-radius:12px;overflow:hidden}
+    .s-kw .lane > div{padding:20px 24px}
+    .s-kw .lane h3{font:400 34px var(--display);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+    .s-kw .lane p{font:400 22px var(--mono);color:#dfe8ec}
+    .s-kw .lane .res{display:grid;place-items:center;font:400 40px var(--display);text-transform:uppercase;white-space:nowrap}
+    .s-kw .lane.bad h3{color:var(--red)} .s-kw .lane.bad .res{background:rgba(255,105,96,.12);color:var(--red)}
+    .s-kw .lane.good{border-color:var(--green)} .s-kw .lane.good h3{color:var(--green)} .s-kw .lane.good .res{background:var(--green);color:var(--bg)}
+  </style>
+  <h2 class="build">Keyword search vs. semantic search</h2>
+  <div class="req">Me: “Add something to drink for the <u>weekend</u>.”</div>
+  <div class="row">
+    <div class="panel mem" data-cls="1:kw;3:-kw;3:sem"><div class="lbl">IN MEMORY</div>
+      <div class="txt"><span class="w">Delivery</span> <span class="w">on</span> <span class="w hit">Saturday</span> <span class="w">mornings</span></div></div>
+    <div class="lanes">
+      <div class="lane bad" data-in="1"><div><h3>Keyword search</h3><p>“weekend”: no match</p></div><div class="res" data-in="2">Nothing found</div></div>
+      <div class="lane good" data-in="3"><div><h3>Semantic search</h3><p>Delivery on Saturday mornings → weekend</p></div><div class="res" data-in="4">Match!</div></div>
+    </div>
+  </div>
+  <aside class="notes">Keyword search looks for the word “weekend” — it isn’t there. Semantic search knows Saturday is the weekend.</aside>
+  <script type="application/json" class="trace">{
+    "0":[["composer","render slide 27"],["session","user: \"Add something to drink for the weekend.\""]],
+    "1":[["retriever","$search {text: {query: \"weekend\", path: \"content\"}}"]],
+    "2":[["retriever","→ 0 hits · \"weekend\" ∉ any memory","warn"]],
+    "3":[["retriever","embed(query) · voyage · 1024 dims"],["retriever","$vectorSearch {index: \"memories_vec\", numCandidates: 200, limit: 5}"]],
+    "4":[["retriever","→ \"Delivery on Saturday mornings\" · score 0.83","ok"]]
+  }</script>
+</section>
+<!-- 28-embeddings.html -->
+<section class="slide s-emb" data-title="Vector embeddings capture meaning" data-hook="emb">
+  <style>
+    .s-emb .lead{font-size:30px;color:#e8eef0;margin-top:-14px;margin-bottom:46px}
+    .s-emb .flow{display:flex;align-items:center;gap:28px}
+    .s-emb .word{font:700 44px var(--body);color:var(--blue);padding:16px 26px;border:2px solid var(--blue);border-radius:10px;flex:none}
+    .s-emb .arr{font:400 54px var(--display);color:var(--muted);flex:none}
+    .s-emb .vec{font:400 34px var(--mono);color:var(--green);white-space:nowrap}
+    .s-emb .bars{display:flex;align-items:center;gap:3px;height:150px;margin:40px 0 18px;border-top:1px dashed var(--line2);border-bottom:1px dashed var(--line2)}
+    .s-emb .bar{flex:1;height:var(--v);background:var(--green);opacity:.85;border-radius:1px;transform:scaleY(0);transition:transform .35s cubic-bezier(.3,1.4,.5,1)}
+    .s-emb .bar.neg{background:var(--blue)}
+    .s-emb .bars.on .bar{transform:scaleY(1);transition-delay:calc(var(--i) * 9ms)}
+    .s-emb .cap{display:flex;justify-content:space-between;font-size:24px;color:var(--muted)}
+    .s-emb .cap b{color:#fff;font-weight:600}
+  </style>
+  <h2 class="build">Vector embeddings capture meaning</h2>
+  <div class="lead" data-in="0">A long array of numbers that captures what the text means.</div>
+  <div class="flow">
+    <div class="word" data-in="1">“weekend”</div>
+    <div class="arr" data-in="1">→</div>
+    <div class="vec type" data-in="2">[0.12, -0.48, 0.91, 0.07, -0.33, 0.64, …]</div>
+  </div>
+  <div class="bars" data-cls="2:on"></div>
+  <div class="cap"><span data-in="3">↑ each number is one <b>dimension of meaning</b></span><span data-in="3"><b>1,024</b> in total →</span></div>
+  <aside class="notes">An embedding model turns the word into 1,024 numbers. Each bar is one dimension; we only see the first hundred or so.</aside>
+  <script>
+  (window.DeckHooks ||= {}).emb = {
+    init(s){
+      const bars = s.querySelector('.bars'); const first = [0.12,-0.48,0.91,0.07,-0.33,0.64];
+      let seed = 11; const rnd = () => (seed = (seed * 9301 + 49297) % 233280) / 233280;
+      for (let i = 0; i < 128; i++){
+        const v = i < first.length ? first[i] : (rnd() * 2 - 1) * (0.25 + rnd() * 0.7);
+        const b = document.createElement('span'); b.className = 'bar' + (v < 0 ? ' neg' : '');
+        b.style.setProperty('--v', Math.max(4, Math.abs(v) * 72) + 'px'); b.style.setProperty('--i', i);
+        b.style.alignSelf = 'center'; b.style.transformOrigin = 'center';
+        bars.appendChild(b);
+      }
+    }
+  };
+  </script>
+  <script type="application/json" class="trace">{
+    "0":[["composer","render slide 28"]],
+    "1":[["retriever","embed(\"weekend\") · model voyage · input_type=query"]],
+    "2":[["retriever","→ float32[1024] · [0.12, -0.48, 0.91, 0.07, …] · ‖v‖ = 1.00","ok"]],
+    "3":[["consolidator","stored on each memory doc as field \"embedding\" · index memories_vec (cosine)"]]
+  }</script>
+</section>
+<!-- 29-meaning-space.html -->
+<section class="slide s-mean" data-title="Meaning space">
+  <style>
+    .s-mean .row{display:grid;grid-template-columns:600px 1fr;gap:50px;align-items:start}
+    .s-mean .lead{font-size:30px;line-height:1.35;margin:20px 0 34px}
+    .s-mean .vecs{border:1px solid var(--green);background:rgba(0,237,100,.06);border-radius:6px;padding:20px 24px;font:400 21px/1.9 var(--mono);white-space:pre}
+    .s-mean .vecs .dot{color:var(--green)} .s-mean .vecs .dot.q{color:var(--blue)}
+    .s-mean .vecs .v{color:var(--muted)}
+    .s-mean .space{border:1px solid var(--line2);border-radius:6px;height:500px;position:relative;background:var(--panel)}
+    .s-mean .space .ttl{position:absolute;top:14px;left:0;right:0;text-align:center;font:400 26px var(--display);color:#cfd8dc;letter-spacing:.5px}
+    .s-mean svg{position:absolute;inset:0;width:100%;height:100%}
+    .s-mean svg text{font:700 22px var(--body)}
+    .s-mean .pt[data-in]{transform:translate(var(--dx),var(--dy));opacity:0;transition:transform 1s cubic-bezier(.2,.8,.2,1),opacity .4s}
+    .s-mean .pt[data-in].on{transform:none;opacity:1}
+    .s-mean .ring[data-in]{transform:none;transform-origin:430px 140px;transform-box:view-box;scale:.6;transition:opacity .4s,scale .5s}
+    .s-mean .ring[data-in].on{scale:1}
+  </style>
+  <h2 class="build">Vector embeddings capture meaning</h2>
+  <div class="row">
+    <div>
+      <div class="lead" data-in="0">Similar terms have vectors that are positioned close together in the vector space.</div>
+      <div class="vecs"><span data-in="1"><span class="dot q">●</span> “weekend”         <span class="v">[0.12, -0.48, 0.91, …]</span></span>
+<span data-in="2"><span class="dot">●</span> “Saturday”        <span class="v">[0.14, -0.45, 0.88, …]</span></span>
+<span data-in="2"><span class="dot">●</span> “Sunday”          <span class="v">[0.10, -0.51, 0.86, …]</span></span>
+<span data-in="2"><span class="dot">●</span> “end of the week” <span class="v">[0.17, -0.42, 0.84, …]</span></span></div>
+    </div>
+    <div class="space">
+      <div class="ttl">MEANING SPACE</div>
+      <svg viewBox="0 0 870 500">
+        <g class="ring" data-in="3"><ellipse cx="415" cy="190" rx="345" ry="115" fill="none" stroke="#00A35C" stroke-width="2"/>
+          <text x="80" y="330" fill="#cfd8dc" style="font:400 21px var(--body)">close = similar meaning</text></g>
+        <g class="pt" data-in="1" style="--dx:0px;--dy:30px"><circle cx="360" cy="200" r="15" fill="#3BC4F2"/><text x="290" y="160" fill="#3BC4F2">“weekend”</text></g>
+        <g class="pt" data-in="2" style="--dx:260px;--dy:240px"><circle cx="520" cy="130" r="11" fill="#00ED64"/><text x="542" y="138" fill="#00ED64">Saturday</text></g>
+        <g class="pt" data-in="2" style="--dx:-90px;--dy:220px"><circle cx="180" cy="230" r="11" fill="#00ED64"/><text x="202" y="238" fill="#00ED64">Sunday</text></g>
+        <g class="pt" data-in="2" style="--dx:200px;--dy:-120px"><circle cx="470" cy="238" r="11" fill="#00ED64"/><text x="492" y="246" fill="#00ED64">end of the week</text></g>
+        <g class="pt" data-in="4" style="--dx:-300px;--dy:-260px"><circle cx="640" cy="390" r="11" fill="#FFC010"/><text x="662" y="398" fill="#FFC010">matcha</text></g>
+        <g class="pt" data-in="4" style="--dx:-260px;--dy:-300px"><circle cx="690" cy="440" r="11" fill="#FFC010"/><text x="712" y="448" fill="#FFC010">wet grass</text></g>
+        <g class="pt" data-in="4" style="--dx:-200px;--dy:-240px"><circle cx="590" cy="425" r="11" fill="#FFC010"/><text x="510" y="463" fill="#FFC010">dirt</text></g>
+      </svg>
+    </div>
+  </div>
+  <aside class="notes">Saturday, Sunday and “end of the week” land right next to “weekend”. Matcha, wet grass and dirt are close to each other — and far from the weekend.</aside>
+  <script type="application/json" class="trace">{
+    "0":[["composer","render slide 29 · projecting 1024 dims → 2D for display"]],
+    "1":[["retriever","plot(\"weekend\") · query vector"]],
+    "2":[["retriever","$vectorSearch near \"weekend\" → Saturday 0.94 · Sunday 0.92 · end of the week 0.90","ok"]],
+    "3":[["retriever","cosine ≥ 0.85 → same neighborhood"]],
+    "4":[["retriever","matcha 0.21 · wet grass 0.18 · dirt 0.16 → far away (but close to each other)"]]
+  }</script>
+</section>
+<!-- 30-dinner-memories.html -->
+<section class="slide s-found" data-title="Semantic search finds the dinner memories">
+  <style>
+    .s-found .req{display:inline-block;background:var(--green);color:var(--bg);padding:14px 22px;border-radius:4px;font:700 26px var(--body);margin-bottom:20px}
+    .s-found .pool{display:flex;flex-wrap:wrap;gap:10px;min-height:60px;padding:10px 12px;border:1px dashed var(--line2);border-radius:10px;margin-bottom:18px}
+    .s-found .pool:not(:has(.m)){display:none}
+    .s-found .cols{display:grid;grid-template-columns:1fr 1fr;gap:28px}
+    .s-found .col{border-radius:12px;padding:0 18px 16px;min-height:310px;display:flex;flex-direction:column;gap:10px}
+    .s-found .col header{margin:0 -18px 6px;padding:10px 18px;font:400 32px var(--display);letter-spacing:.5px;display:flex;justify-content:space-between;align-items:baseline}
+    .s-found .col header span{font:500 14px var(--mono);color:var(--muted)}
+    .s-found .found{border:2px solid var(--green);background:rgba(0,237,100,.06)} .s-found .found header{color:var(--green);border-bottom:1px solid rgba(0,237,100,.3)}
+    .s-found .out{border:1px solid var(--line2);background:var(--panel)} .s-found .out header{color:var(--muted);border-bottom:1px solid var(--line)}
+    .s-found .m{padding:9px 14px;border-radius:8px;border:1px solid var(--line2);background:var(--panel2);font-size:20px;display:flex;justify-content:space-between;gap:16px;align-items:baseline}
+    .s-found .m i{font:400 15px var(--mono);color:var(--muted);font-style:normal;white-space:nowrap}
+    .s-found .found .m{border-color:var(--green)} .s-found .found .m i{color:var(--green)}
+    .s-found .out .m{color:#9fb3bb}
+    .s-found .m.allergy.alarm{border:2px solid var(--red);color:var(--red);font-weight:700;box-shadow:0 0 20px rgba(255,105,96,.35)}
+    .s-found .m.allergy.alarm i{color:var(--red)}
+  </style>
+  <h2 class="build">Semantic search finds the dinner memories</h2>
+  <div class="req">Me: “Create a shopping list for a quick dinner tonight.”</div>
+  <div class="pool">
+    <div class="m" data-move="1:f-found">“I like quick meals.” <i>quick dinner ≈ quick meals · 0.86</i></div>
+    <div class="m" data-move="2:f-out">The 1-star matcha review <i>0.31</i></div>
+    <div class="m" data-move="1:f-found">“I loved the 20-minute stir-fry.” <i>a fast dinner · 0.81</i></div>
+    <div class="m" data-move="2:f-out">Olive oil from 3 months ago <i>0.44</i></div>
+    <div class="m" data-move="1:f-found">“I shop for two.” <i>dinner portions · 0.77</i></div>
+    <div class="m" data-move="2:f-out">Deliver on Saturday mornings <i>0.29</i></div>
+    <div class="m allergy" data-move="2:f-out" data-cls="3:alarm">Gluten allergy <i>0.12</i></div>
+  </div>
+  <div class="cols">
+    <div class="col found" id="f-found"><header>Found <span>limit: 3</span></header></div>
+    <div class="col out" id="f-out"><header>Left out <span>below threshold</span></header></div>
+  </div>
+  <aside class="notes">Search does its job: three great dinner memories. But look what’s in “left out”…</aside>
+  <script type="application/json" class="trace">{
+    "0":[["composer","render slide 30"],["retriever","$vectorSearch(query=\"quick dinner tonight\", numCandidates: 200, limit: 3)"]],
+    "1":[["retriever","→ quick meals 0.86 · 20-min stir-fry 0.81 · shop for two 0.77","ok"]],
+    "2":[["retriever","not returned: olive oil 0.44 · matcha 0.31 · Saturday delivery 0.29 · gluten allergy 0.12"]],
+    "3":[["guard","constraint \"Allergic to gluten\" missing from context","err"]]
+  }</script>
+</section>
+<!-- 31-wheres-allergy.html -->
+<section class="slide s-where" data-title="Where’s the allergy?">
+  <style>
+    .s-where .pair{display:grid;grid-template-columns:1fr 160px 1fr;align-items:center;margin-top:50px}
+    .s-where .q{border-radius:12px;padding:44px 36px;font:700 44px/1.2 var(--body);text-align:center}
+    .s-where .q small{display:block;font:600 15px var(--mono);letter-spacing:1px;margin-bottom:14px;font-weight:600}
+    .s-where .q.a{border:2px solid var(--red);color:#fff} .s-where .q.a small{color:var(--red)}
+    .s-where .q.b{background:var(--green);color:var(--bg)} .s-where .q.b small{color:#00502a}
+    .s-where .ne{text-align:center;font:400 130px/1 var(--display);color:var(--red)}
+    .s-where .ne span{display:block;font:500 18px var(--mono);color:var(--muted);margin-top:6px}
+    .s-where .cap{margin-top:56px;text-align:center;font-size:32px;line-height:1.4}
+    .s-where .cap b{color:var(--red)}
+  </style>
+  <h2 class="build">Where’s the allergy?</h2>
+  <div class="pair">
+    <div class="q a" data-in="1"><small>MEMORY</small>“I’m allergic to gluten.”</div>
+    <div class="ne" data-in="2">≠<span>cosine 0.12</span></div>
+    <div class="q b" data-in="1"><small>REQUEST</small>“Quick dinner tonight.”</div>
+  </div>
+  <div class="cap" data-in="3"><b>No shared words. No similar meaning.</b><br>To a search engine, these two have nothing in common.</div>
+  <aside class="notes">The most important memory for this request — and search can’t see it. That’s not a bug in search.</aside>
+  <script type="application/json" class="trace">{
+    "0":[["composer","render slide 31"]],
+    "1":[["retriever","compare(memory, request)"]],
+    "2":[["retriever","keyword overlap: 0 tokens · cosine similarity 0.12","warn"]],
+    "3":[["guard","retrieval alone can't surface this constraint","err"]]
+  }</script>
+</section>
+<!-- 32-relevance.html -->
+<section class="slide s-relev grid-bg" data-title="Relevance is not importance">
+  <div class="statement">
+    <div class="big"><span class="build">Relevance is</span><br><span class="build">not importance.</span></div>
+  </div>
+  <aside class="notes">Pause here. Search ranks by relevance to the request; some memories are important no matter what the request is.</aside>
+  <script type="application/json" class="trace">{
+    "0":[["composer","render slide 32"],["guard","rule learned: relevance ≠ importance → pin constraints","warn"]]
+  }</script>
+</section>
+<!-- 33-pin-constraints.html -->
+<section class="slide s-pin" data-title="Pin the constraints">
+  <style>
+    .s-pin .row{display:grid;grid-template-columns:560px 110px 1fr;align-items:start;margin-top:20px}
+    .s-pin .fixed{border:1px solid var(--green);background:rgba(0,237,100,.1);border-radius:4px;padding:26px 28px;text-align:center;margin-top:44px}
+    .s-pin .fixed b{display:block;font:400 30px var(--display);color:var(--green);letter-spacing:.5px;text-transform:uppercase;margin-bottom:6px}
+    .s-pin .fixed span{font:700 28px/1.3 var(--body)}
+    .s-pin .fixed .mono{display:block;margin-top:16px;font:400 16px var(--mono);color:var(--muted);text-align:left}
+    .s-pin .arrow{font:400 60px var(--display);color:var(--green);text-align:center;margin-top:92px}
+    .s-pin .prompt .ttl{font:400 30px var(--display);color:#cfd8dc;letter-spacing:.5px;margin-bottom:10px}
+    .s-pin .slot{position:relative;border-radius:4px;padding:26px 28px;text-align:center;font-size:26px;margin-bottom:16px}
+    .s-pin .slot i{position:absolute;right:12px;top:8px;font:500 14px var(--mono);font-style:normal}
+    .s-pin .slot.c{background:var(--green);color:var(--bg);font-weight:700} .s-pin .slot.c i{color:#00502a}
+    .s-pin .slot.c .pinned{position:absolute;left:12px;top:8px;font:600 13px var(--mono);letter-spacing:1px}
+    .s-pin .slot.r{border:1px solid var(--green)} .s-pin .slot.r i{color:var(--muted)}
+    .s-pin .slot.q{border:1px solid #cfd8dc} .s-pin .slot.q i{color:var(--muted)}
+  </style>
+  <h2 class="build">Pin the constraints</h2>
+  <div class="row">
+    <div class="fixed" data-in="1"><b>Fixed constraints search</b><span>“Allergies, intolerances and dietary restrictions”</span>
+      <span class="mono">find({type: "constraint"}) · runs on every request</span></div>
+    <div class="arrow" data-in="2">→</div>
+    <div class="prompt">
+      <div class="ttl">THE PROMPT</div>
+      <div class="slot c" data-in="2"><span class="pinned">📌 PINNED</span><i>12 tok</i>Constraints (always apply)<br>Allergic to gluten</div>
+      <div class="slot r" data-in="3"><i>96 tok</i>Relevant memories from search</div>
+      <div class="slot q" data-in="4"><i>14 tok</i>The request</div>
+    </div>
+  </div>
+  <aside class="notes">Two retrievals: a fixed one for constraints that always runs, and semantic search for the rest. Constraints go first and never get truncated.</aside>
+  <script type="application/json" class="trace">{
+    "0":[["composer","render slide 33 · assembling prompt"]],
+    "1":[["retriever","find({type: \"constraint\", category: {$in: [\"allergy\", \"intolerance\", \"diet\"]}}) → 1 doc"]],
+    "2":[["composer","prompt[0] = constraints · \"Allergic to gluten\" · 12 tokens · pinned","ok"]],
+    "3":[["retriever","$vectorSearch(\"quick dinner tonight\", limit: 3) → 3 memories · 96 tokens"]],
+    "4":[["composer","prompt assembled · 122 tokens · allergy included","ok"]]
+  }</script>
+</section>
+<!-- 34-assemble.html -->
+<section class="slide s-asm" data-title="Assemble the context deliberately">
+  <style>
+    .s-asm .row{display:grid;grid-template-columns:520px 1fr;gap:60px;margin-top:10px}
+    .s-asm .nums{display:flex;gap:60px}
+    .s-asm .nums b{display:block;font:400 150px/.9 var(--display)}
+    .s-asm .nums .a b{color:var(--green)} .s-asm .nums .z b{color:#3BC4F2}
+    .s-asm .nums span{font-size:24px}
+    .s-asm .why{margin-top:40px;font-size:24px;line-height:1.5;color:#b9c7cd}
+    .s-asm .pipe{border:1px solid var(--green);padding:30px 30px 24px}
+    .s-asm .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+    .s-asm .st{border:1px solid var(--green);color:var(--green);text-align:center;padding:20px 10px 14px;font:700 24px/1.2 var(--body);transition:background .3s,color .3s}
+    .s-asm .st small{display:block;font:500 15px var(--mono);margin-top:8px;opacity:.85}
+    .s-asm .st.lit{background:var(--green);color:var(--bg)}
+    .s-asm .pipe p{margin-top:24px;font-size:24px;text-align:center}
+    .s-asm .pipe code{font:400 24px var(--mono);color:var(--green)}
+    .s-asm .warn{margin-top:24px;border:1px solid #3BC4F2;padding:26px 30px;text-align:center;font:700 24px/1.4 var(--body)}
+  </style>
+  <h2 class="build">Assemble the context deliberately</h2>
+  <div class="row">
+    <div>
+      <div class="nums">
+        <div class="a"><b>30</b><span>memories retrieved</span></div>
+        <div class="z" data-in="3"><b data-swap="1:30;2:19;3:2">30</b><span>that matter</span></div>
+      </div>
+      <div class="why">More tokens = more cost<br>More tokens = slower answers<br>More noise = worse answers</div>
+    </div>
+    <div>
+      <div class="pipe">
+        <div class="steps">
+          <div class="st" data-cls="1:lit">Rank<small data-in="1">by score</small></div>
+          <div class="st" data-cls="2:lit">Remove duplicates<small data-in="2">30 → 19</small></div>
+          <div class="st" data-cls="3:lit">Fit the token budget<small data-in="3">19 → 2</small></div>
+        </div>
+        <p data-in="4"><b>In Agent Engine:</b> <code>build_context</code> does all three.</p>
+      </div>
+      <div class="warn" data-in="4">A tight budget can cut the allergy. Pinned constraints shouldn’t compete for space.</div>
+    </div>
+  </div>
+  <aside class="notes">Rank, dedupe, fit the budget — thirty candidates down to two. Then the warning: never let the budget decide whether the allergy makes it in.</aside>
+  <script type="application/json" class="trace">{
+    "0":[["composer","render slide 34"],["retriever","$vectorSearch(limit: 30) → 30 candidates · 3,410 tokens"]],
+    "1":[["retriever","build_context · rank by score × recency × confidence"]],
+    "2":[["retriever","build_context · dedupe (sim > 0.95) → 11 merged · 19 left"]],
+    "3":[["retriever","build_context · token_budget=400 → 2 memories · 188 tokens","ok"]],
+    "4":[["guard","pinned constraints reserved outside the budget","ok"]]
+  }</script>
+</section>
+<!-- 35-takeaway-2.html -->
+<section class="slide s-take2" data-title="Section takeaway: search finds what’s relevant">
+  <div class="takeaway">
+    <div class="lbl">SECTION TAKEAWAY</div>
+    <div class="big build">Search finds what’s relevant, not always what’s important.</div>
+    <p data-in="1">Retrieve semantically and pin the constraints that must apply to every request.</p>
+  </div>
+  <aside class="notes">Section two in one line. Next: what happens when memories change.</aside>
+  <script type="application/json" class="trace">{
+    "0":[["composer","render slide 35 · section 02 summary"]],
+    "1":[["extractor","classify(takeaway) → semantic · stated · ttl ∞","ok"],["session","progress: problem 2/3 ✓","ok"]]
+  }</script>
+</section>
+<!-- 36-section-update.html -->
+<section class="slide s-sec3 grid-bg" data-title="03 · Update and forget">
+  <div class="section-div">
+    <div class="no build">03</div>
+    <h1><span class="build">Update</span><br><span class="build">and forget</span></h1>
+  </div>
+  <aside class="notes">Section three. Memory that never changes goes stale — let’s keep it current and let it go.</aside>
+  <script type="application/json" class="trace">{
+    "0":[["composer","render slide 36 · section 03 \"Update and forget\""],
+         ["consolidator","queue: 3 pending memory updates · 1 expiring · 1 delete request","warn"]]
+  }</script>
+</section>
+<!-- 37-agenda-3.html -->
+<section class="slide s-ag3" data-title="3 problems · #3">
+  <h2 class="build">3 problems we’ll tackle today</h2>
+  <div class="agenda is-3">
+    <div class="item"><span class="num-badge">1</span><div><b>What’s worth remembering?</b><p>Decide what becomes a long-term memory, and what doesn’t.</p></div></div>
+    <div class="item"><span class="num-badge">2</span><div><b>How do we find the right memory at the right time?</b><p>Pick the few memories that matter for this request.</p></div></div>
+    <div class="item"><span class="num-badge">3</span><div><b>How do we update and forget?</b><p>Keep memories current, and let go of what’s stale.</p></div></div>
+  </div>
+  <aside class="notes">Two down, one to go: keeping memory current, and forgetting on purpose.</aside>
+  <script type="application/json" class="trace">{
+    "0":[["composer","render slide 37 · agenda · focus=3"],
+         ["session","progress: problem 1 ✓ · problem 2 ✓ · problem 3 in progress","ok"]]
+  }</script>
+</section>
+<!-- 38-whats-the-truth.html -->
+<section class="slide s-truth" data-title="What's the truth?">
+  <style>
+    .s-truth .grid{display:grid;grid-template-columns:420px 80px 400px 1fr;gap:0 28px;align-items:start}
+    .s-truth .lbl{font:400 30px var(--display);color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px}
+    .s-truth .quote{border:1px solid var(--line2);background:var(--panel);border-radius:10px;padding:30px 26px;font-size:25px;line-height:1.35;text-align:center;min-height:156px;display:grid;place-items:center}
+    .s-truth .col1 .lbl + .quote{margin-bottom:26px}
+    .s-truth .arrows{position:relative;height:420px}
+    .s-truth .arrows svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+    .s-truth .arrows path{stroke:var(--green);stroke-width:3;fill:none;stroke-dasharray:140;stroke-dashoffset:140;transition:stroke-dashoffset .6s ease}
+    .s-truth .arrows path.on{stroke-dashoffset:0}
+    .s-truth .mem{border:2px solid var(--green);border-radius:10px;padding:18px 22px 22px;min-height:420px;margin-top:42px}
+    .s-truth .mem h4{font:400 30px var(--display);color:var(--green);text-transform:uppercase;text-align:center;letter-spacing:.5px;margin-bottom:18px}
+    .s-truth .fact{background:var(--green);color:var(--bg);font:700 24px var(--body);text-align:center;padding:20px;border-radius:4px;margin-bottom:14px;transition:box-shadow .4s,background .4s,color .4s}
+    .s-truth .fact.clash{background:transparent;color:#fff;box-shadow:0 0 0 3px var(--red),0 0 24px rgba(255,105,96,.4)}
+    .s-truth .fact .tag{display:block;font:600 12px var(--mono);letter-spacing:1px;margin-top:6px;opacity:.75}
+    .s-truth .ask{font:700 25px/1.3 var(--body);color:var(--blue);margin-top:18px}
+    .s-truth .side .lbl{color:#fff}
+    .s-truth .life{font-size:24px;line-height:1.4}
+    .s-truth .life b{color:var(--green)}
+    .s-truth .punch{font:700 27px/1.35 var(--body);margin-top:44px}
+    .s-truth .punch em{font-style:normal;color:var(--green)}
+  </style>
+  <h2 class="build">What’s the truth?</h2>
+  <div class="grid">
+    <div class="col1">
+      <div data-in="1"><div class="lbl">Before</div><div class="quote">“I love pasta! Carbonara, lasagne, all of it.”</div></div>
+      <div data-in="2"><div class="lbl">Now</div><div class="quote">“I can’t eat gluten anymore.”</div></div>
+    </div>
+    <div class="arrows">
+      <svg viewBox="0 0 80 420" preserveAspectRatio="none">
+        <path d="M0 110 L78 130" data-cls="1:on"/>
+        <path d="M0 330 L78 230" data-cls="2:on"/>
+      </svg>
+    </div>
+    <div class="mem">
+      <h4>Agent memory</h4>
+      <div class="fact" data-in="1" data-cls="2:clash">Loves pasta.<span class="tag">semantic · v1 · is_latest: true</span></div>
+      <div class="fact" data-in="2" data-cls="2:clash">Can’t eat gluten.<span class="tag">semantic · v1 · is_latest: true</span></div>
+      <div class="ask" data-in="3">Should it suggest carbonara for dinner?</div>
+    </div>
+    <div class="side">
+      <div data-in="4"><div class="lbl">Life changes</div>
+        <div class="life"><b>A year ago:</b> “I like quick meals.”<br><b>Now:</b> “I’ve got time while waiting for Claude - I can cook a slow recipe.”</div></div>
+      <div class="punch" data-in="5">An agent that never updates isn’t forgetful. It’s <em>confidently wrong</em>.</div>
+    </div>
+  </div>
+  <aside class="notes">Both facts are “true” in storage. Without an update step the agent has no idea which one wins.</aside>
+  <script type="application/json" class="trace">{
+    "0":[["composer","render slide 38 · consolidation: DISABLED for this example","warn"]],
+    "1":[["extractor","2025-03 · \"I love pasta!\" → semantic · stated · insertOne()"]],
+    "2":[["extractor","2026-10 · \"I can't eat gluten anymore.\" → semantic · stated · insertOne()"],["guard","2 memories, both is_latest: true · contradiction not resolved","warn"]],
+    "3":[["retriever","$vectorSearch(\"dinner\") → \"Loves pasta.\" 0.82 · \"Can't eat gluten.\" 0.41"],["guard","top result suggests carbonara · contains gluten","err"]],
+    "4":[["extractor","\"I can cook a slow recipe\" vs. \"I like quick meals\" · same topic, opposite value","warn"]],
+    "5":[["consolidator","fix: compare each new fact with existing ones before insert","ok"]]
+  }</script>
+</section>
+<!-- 39-lifecycle.html -->
+<section class="slide s-cycle" data-title="Memory is a lifecycle">
+  <style>
+    .s-cycle .lanes{display:grid;grid-template-columns:repeat(3,1fr);gap:26px}
+    .s-cycle .lane{border:1px solid var(--green);border-radius:4px;padding:30px 30px 26px;height:536px;display:flex;flex-direction:column;background:rgba(2,38,52,.6)}
+    .s-cycle .op{align-self:flex-start;background:var(--green);color:var(--bg);font:400 32px var(--display);letter-spacing:.5px;padding:8px 46px;margin-bottom:22px}
+    .s-cycle .what{font:700 25px/1.3 var(--body)}
+    .s-cycle .ex{font-size:22px;line-height:1.35;color:#c9d6dc;margin-top:4px}
+    .s-cycle .viz{flex:1;margin:18px 0 0;position:relative}
+    .s-cycle .res{border-top:1px solid var(--line2);padding-top:16px;font:700 23px/1.3 var(--body);color:var(--green)}
+    .s-cycle .m{font:500 15px var(--mono);border:1px solid var(--line2);border-radius:6px;padding:8px 10px;background:var(--panel2);margin-bottom:8px}
+    .s-cycle .m.new{border-color:var(--green);box-shadow:0 0 16px rgba(0,237,100,.25)}
+    .s-cycle .m.old{color:var(--dim);text-decoration:line-through}
+    .s-cycle .m .t{color:var(--muted)}
+    /* reinforce: 10 copies collapse into one */
+    .s-cycle .copies{position:relative;height:118px}
+    .s-cycle .cp{position:absolute;left:calc(var(--c) * 50%);top:calc(var(--r) * 24px);width:48%;font:500 13px var(--mono);border:1px solid var(--line2);border-radius:4px;padding:2px 8px;background:var(--panel2);color:#c9d6dc;opacity:0;transition:left .6s cubic-bezier(.2,.8,.2,1),top .6s cubic-bezier(.2,.8,.2,1),opacity .4s,transform .3s;transition-delay:calc(var(--i) * 40ms)}
+    .s-cycle .copies.on .cp{opacity:1}
+    .s-cycle .copies.merged .cp{left:0;top:0;opacity:0;transition-delay:0s}
+    .s-cycle .one{font:500 15px var(--mono);border:2px solid var(--green);border-radius:6px;padding:8px 10px;background:rgba(0,237,100,.08);position:absolute;left:0;right:0;top:0}
+    .s-cycle .one b{color:var(--amber);font-weight:600}
+  </style>
+  <h2 class="build">Memory is a lifecycle</h2>
+  <div class="lanes">
+    <div class="lane">
+      <span class="op">ADD</span>
+      <div class="what">It’s new.</div>
+      <div class="ex">“I started baking gluten-free bread.”</div>
+      <div class="viz">
+        <div class="m new" data-in="1"><span class="t">+</span> “Bakes gluten-free bread” · v1</div>
+      </div>
+      <div class="res" data-in="1">A new memory.</div>
+    </div>
+    <div class="lane">
+      <span class="op">UPDATE</span>
+      <div class="what">It replaces something old.</div>
+      <div class="ex">“I’m looking for slow recipes now.”</div>
+      <div class="viz">
+        <div class="m" data-in="2" data-cls="2:old">“Quick meals” · v1 · is_latest: <span data-swap="2:false">true</span></div>
+        <div class="m new" data-in="2">“Slow recipes” · v2 · is_latest: true</div>
+      </div>
+      <div class="res" data-in="2">Replaces “I like quick meals”.</div>
+    </div>
+    <div class="lane">
+      <span class="op">REINFORCE</span>
+      <div class="what">It confirms what we know.</div>
+      <div class="ex">My gluten allergy, mentioned for the 10th time.</div>
+      <div class="viz">
+        <div class="copies" data-cls="3:on;4:merged">
+          <span class="cp" style="--i:0;--c:0;--r:0">#1 allergic to gluten</span><span class="cp" style="--i:1;--c:1;--r:0">#2 allergic to gluten</span>
+          <span class="cp" style="--i:2;--c:0;--r:1">#3 allergic to gluten</span><span class="cp" style="--i:3;--c:1;--r:1">#4 allergic to gluten</span>
+          <span class="cp" style="--i:4;--c:0;--r:2">#5 allergic to gluten</span><span class="cp" style="--i:5;--c:1;--r:2">#6 allergic to gluten</span>
+          <span class="cp" style="--i:6;--c:0;--r:3">#7 allergic to gluten</span><span class="cp" style="--i:7;--c:1;--r:3">#8 allergic to gluten</span>
+          <span class="cp" style="--i:8;--c:0;--r:4">#9 allergic to gluten</span><span class="cp" style="--i:9;--c:1;--r:4">#10 allergic to gluten</span>
+          <div class="one" data-in="4">“Allergic to gluten” · 1 doc<br>reinforcement_count: <b data-swap="4:10">1</b><br>confidence: <b data-swap="4:0.99">0.90</b></div>
+        </div>
+      </div>
+      <div class="res" data-in="4">One memory, more confident. Not 10 copies.</div>
+    </div>
+  </div>
+  <aside class="notes">Three decisions the consolidator makes for every new fact. Click 3 floods ten mentions, click 4 collapses them into one stronger memory.</aside>
+  <script type="application/json" class="trace">{
+    "0":[["composer","render slide 39 · consolidation: ADD · UPDATE · REINFORCE"]],
+    "1":[["consolidator","\"started baking gluten-free bread\" · nearest existing sim 0.31 → ADD","ok"]],
+    "2":[["consolidator","\"slow recipes now\" · matches v1 \"quick meals\" sim 0.91 · contradicts → UPDATE"],["consolidator","v1.is_latest=false · v2.previous_version_id=v1","ok"]],
+    "3":[["extractor","10 mentions of \"allergic to gluten\" across 10 sessions"]],
+    "4":[["consolidator","same fact, sim 0.99 → REINFORCE · $inc reinforcement_count (×10)","ok"],["consolidator","storage: 1 doc instead of 10 · confidence 0.90 → 0.99","ok"]]
+  }</script>
+</section>
+<!-- 40-versions.html -->
+<section class="slide s-ver" data-title="Agent Engine consolidates and keeps the history">
+  <style>
+    .s-ver .row{display:grid;grid-template-columns:1fr 70px 1fr;gap:20px;align-items:start}
+    .s-ver .doc{min-height:268px}
+    .s-ver .arrow{font:400 60px var(--display);color:var(--purple);text-align:center;padding-top:100px}
+    .s-ver .doc.stale{opacity:.55}
+    .s-ver .said{margin-top:26px;display:flex;gap:16px;align-items:center}
+    .s-ver .said .msg{font-size:22px}
+  </style>
+  <h2 class="build">Agent Engine consolidates &amp; keeps the history</h2>
+  <div class="row">
+    <div class="doc" data-cls="2:stale"><span class="lbl">memories · a year ago</span>{
+  <span class="k">"content"</span>: <span class="s">"I like quick meals."</span>,
+  <span class="k">"type"</span>: <span class="s">"semantic"</span>,
+  <span class="k">"version"</span>: <span class="n">1</span>,
+  <span class="k">"is_latest"</span>: <span class="b" data-swap="2:false">true</span>,
+  <span class="k">"reinforcement_count"</span>: <span class="n">4</span>
+}</div>
+    <div class="arrow" data-in="2">→</div>
+    <div class="doc type" data-in="2"><span class="lbl">memories · now</span>{
+  <span class="k">"content"</span>: <span class="s">"Looking for slow recipes now."</span>,
+  <span class="k">"type"</span>: <span class="s">"semantic"</span>,
+  <span class="k">"version"</span>: <span class="n">2</span>,
+  <span class="k">"is_latest"</span>: <span class="b">true</span>,
+  <span class="k">"previous_version_id"</span>: <span class="s">"v1"</span>,
+  <span class="k">"reinforcement_count"</span>: <span class="n" data-swap="3:2">1</span>
+}</div>
+  </div>
+  <div class="said">
+    <div class="msg me" data-in="1" data-out="3"><small>Me · today</small>“I’ve got time while waiting for Claude. I can cook a slow recipe.”</div>
+    <div class="msg me" data-in="3"><small>Me · next week</small>“Another slow-cooked one, please.”</div>
+  </div>
+  <aside class="notes">version · is_latest · previous_version_id · reinforcement_count. Nothing is overwritten — the history stays queryable.</aside>
+  <script type="application/json" class="trace">{
+    "0":[["composer","render slide 40"],["retriever","find({topic: \"meal_pace\", is_latest: true}) → 1 doc"]],
+    "1":[["extractor","new fact: \"prefers slow recipes\" · semantic · stated"],["consolidator","$vectorSearch existing memories → v1 \"I like quick meals.\" · sim 0.91"]],
+    "2":[["consolidator","decision: UPDATE (contradicts v1)"],["consolidator","updateOne(v1, {$set: {is_latest: false}}) · insertOne(v2)","ok"]],
+    "3":[["consolidator","decision: REINFORCE v2 · $inc reinforcement_count → 2 · no new doc","ok"]]
+  }</script>
+</section>
+<!-- 41-forgetting.html -->
+<section class="slide s-forget" data-title="Forgetting is part of memory" data-hook="forgetTTL">
+  <style>
+    .s-forget .cols{display:grid;grid-template-columns:1fr 1fr;gap:28px}
+    .s-forget .col{border:1px solid var(--green);border-radius:4px;padding:28px 32px;height:540px;display:flex;flex-direction:column;background:rgba(2,38,52,.6)}
+    .s-forget .op{align-self:flex-start;background:var(--green);color:var(--bg);font:400 28px var(--display);letter-spacing:.5px;padding:9px 40px;text-transform:uppercase;margin-bottom:24px}
+    .s-forget .q{font:700 28px var(--body)}
+    .s-forget .sub{font-size:22px;color:#c9d6dc;margin-top:12px}
+    .s-forget .viz{margin-top:24px;display:flex;flex-direction:column;gap:14px}
+    .s-forget .doc{font-size:17px;padding:16px 20px;transition:opacity .5s,filter .5s,transform .5s}
+    .s-forget .doc.gone{border-color:var(--red);transform:scale(.98)}
+    .s-forget .doc.gone, .s-forget .doc.gone span{color:#3d5a66 !important;text-decoration:line-through}
+    .s-forget .doc.gone::after{content:attr(data-gone);position:absolute;right:16px;top:50%;transform:translateY(-50%) rotate(-6deg);font:400 34px var(--display);color:var(--red);border:3px solid var(--red);padding:2px 12px;border-radius:6px;background:var(--panel);text-decoration:none}
+    .s-forget .idx{font:500 15px var(--mono);color:var(--muted);border-left:3px solid var(--amber);padding:4px 12px}
+    .s-forget .idx b{color:var(--amber);font-weight:600}
+    .s-forget .count{display:flex;align-items:baseline;gap:12px;font:500 15px var(--mono);color:var(--muted)}
+    .s-forget .count b{font:400 40px var(--display);color:var(--amber);letter-spacing:1px;min-width:250px}
+    .s-forget .count.zero b{color:var(--red)}
+    .s-forget .msg{font-size:21px;padding:12px 18px;align-self:flex-start}
+    .s-forget .cmd{font:500 15px var(--mono);color:var(--muted);border-left:3px solid var(--red);padding:4px 12px}
+    .s-forget .cmd b{color:var(--red);font-weight:600}
+  </style>
+  <h2 class="build">Forgetting is part of memory</h2>
+  <div class="cols">
+    <div class="col">
+      <span class="op">Short-lived: TTL index</span>
+      <div class="q">“I’m hosting friends on Saturday.”</div>
+      <div class="sub">Useful for a few days. Delete it after.</div>
+      <div class="viz">
+        <div class="doc" data-in="1" data-cls="2:gone" data-gone="EXPIRED">{ <span class="k">"type"</span>: <span class="s">"episodic"</span>,
+  <span class="k">"content"</span>: <span class="s">"Hosting friends Saturday"</span>,
+  <span class="k">"expires_at"</span>: <span class="n">ISODate("2026-12-06")</span> }</div>
+        <div class="idx" data-in="1">createIndex({ <b>expires_at</b>: 1 }, { <b>expireAfterSeconds</b>: 0 })</div>
+        <div class="count" data-in="1" data-cls="2:zero">time to live <b class="ttl">5d 00h 00m</b></div>
+      </div>
+    </div>
+    <div class="col">
+      <span class="op">On request: delete it</span>
+      <div class="q">“Please forget my old address.”</div>
+      <div class="sub">Delete it, explicitly.</div>
+      <div class="viz">
+        <div class="doc" data-in="3" data-cls="4:gone" data-gone="DELETED">{ <span class="k">"type"</span>: <span class="s">"semantic"</span>,
+  <span class="k">"content"</span>: <span class="s">"Lives at 12 Elm Street"</span>,
+  <span class="k">"expires_at"</span>: <span class="b">null</span> }</div>
+        <div class="msg me" data-in="3"><small>Me</small>“Please forget my old address.”</div>
+        <div class="cmd" data-in="4"><b>deleteMany</b>({ user_id, topic: "address" }) · all versions</div>
+      </div>
+    </div>
+  </div>
+  <aside class="notes">Click 2 fast-forwards the clock — MongoDB’s TTL monitor removes it, no code. Clicks 3–4: user asks, we delete every version, not just the latest.</aside>
+  <script>
+  (window.DeckHooks ||= {}).forgetTTL = {
+    apply(s, st, animate){
+      const el = s.querySelector('.ttl'); const total = 5 * 86400;
+      const fmt = sec => { const d = Math.floor(sec/86400), h = Math.floor(sec%86400/3600), m = Math.floor(sec%3600/60);
+        return `${d}d ${String(h).padStart(2,'0')}h ${String(m).padStart(2,'0')}m`; };
+      cancelAnimationFrame(s._raf);
+      const last = s._last; s._last = st;
+      if (st < 2){ el.textContent = fmt(total); return; }
+      if (!(animate && last === 1)){ el.textContent = fmt(0); return; }
+      const t0 = performance.now(), dur = 1600;
+      const tick = now => { const p = Math.min(1, (now - t0) / dur);
+        el.textContent = fmt(Math.round(total * (1 - p) ** 1.6)); if (p < 1) s._raf = requestAnimationFrame(tick); };
+      s._raf = requestAnimationFrame(tick);
+    }
+  };
+  </script>
+  <script type="application/json" class="trace">{
+    "0":[["composer","render slide 41 · lifecycle: expire + delete"]],
+    "1":[["extractor","\"hosting friends Saturday\" → episodic · expires_at = event + 1d"],["consolidator","insertOne · TTL index on expires_at (expireAfterSeconds: 0)"]],
+    "2":[["session","⏩ fast-forward 5 days"],["consolidator","TTL monitor: removed 1 expired memory · no app code","ok"]],
+    "3":[["session","user: \"Please forget my old address.\""],["extractor","intent: FORGET · topic=address · 2 versions found","warn"]],
+    "4":[["consolidator","deleteMany({topic: \"address\"}) → deletedCount: 2 · incl. history","ok"],["guard","forget request honored · not retrievable anymore","ok"]]
+  }</script>
+</section>
+<!-- 42-takeaway-3.html -->
+<section class="slide s-take3" data-title="Section takeaway · lifecycle">
+  <div class="takeaway" style="margin-top:110px">
+    <div class="lbl">SECTION TAKEAWAY</div>
+    <div class="big build">Memory is a lifecycle, not an insert.</div>
+    <p data-in="0">New information adds, updates or reinforces what the agent knows. What’s short-lived, or what the user asks to forget, gets deleted.</p>
+  </div>
+  <aside class="notes">One line to remember from section three.</aside>
+  <script type="application/json" class="trace">{
+    "0":[["composer","render slide 42 · section 03 takeaway"],
+         ["consolidator","lifecycle ops this session: ADD 1 · UPDATE 1 · REINFORCE 10 · EXPIRE 1 · DELETE 2","ok"]]
+  }</script>
+</section>
+<!-- 43-recap.html -->
+<section class="slide s-recap" data-title="Back to our 3 questions">
+  <style>
+    .s-recap .agenda{gap:14px}
+    .s-recap .agenda .item{padding:18px 26px;align-items:flex-start}
+    .s-recap .agenda .item b{font-size:40px}
+    .s-recap .agenda .item p{color:#e3ebee;font-size:22px;line-height:1.4;margin-top:6px}
+    .s-recap .agenda .item p .tick{color:var(--green);font-weight:700;margin-right:6px}
+  </style>
+  <h2 class="build">Back to our 3 questions</h2>
+  <div class="agenda" data-cls="1:is-1;2:-is-1;2:is-2;3:-is-2;3:is-3;4:-is-3">
+    <div class="item"><span class="num-badge">1</span><div><b>What’s worth remembering?</b><p data-in="1"><span class="tick">✓</span>Not everything. Keep durable facts, drop short-lived details. Agent Engine extracts by type, in the background.</p></div></div>
+    <div class="item"><span class="num-badge">2</span><div><b>The right memory at the right time?</b><p data-in="2"><span class="tick">✓</span>Search by meaning with vector search (or hybrid search) and pin the constraints.</p></div></div>
+    <div class="item"><span class="num-badge">3</span><div><b>How do we update and forget?</b><p data-in="3"><span class="tick">✓</span>Memory is a lifecycle. Keep version history. Expire short-lived data and explicitly delete everything the user asks to forget.</p></div></div>
+  </div>
+  <aside class="notes">One click per answer, then all three together.</aside>
+  <script type="application/json" class="trace">{
+    "0":[["composer","render slide 43 · recap"]],
+    "1":[["extractor","answer 1 · record_turn → snapshot → extract by type · async","ok"]],
+    "2":[["retriever","answer 2 · $vectorSearch / hybrid ($rankFusion) + pinned constraints","ok"]],
+    "3":[["consolidator","answer 3 · ADD/UPDATE/REINFORCE · is_latest · TTL · deleteMany","ok"]],
+    "4":[["session","3 of 3 problems solved","ok"]]
+  }</script>
+</section>
+<!-- 44-closing.html -->
+<section class="slide s-close grid-bg" data-title="Good agent memory">
+  <style>
+    .s-close .wrap{display:grid;grid-template-columns:1fr 420px;gap:70px;align-items:center;margin-top:30px}
+    .s-close .box{border:2px solid var(--green);background:var(--bg);padding:44px 50px}
+    .s-close .box h1{font-size:78px;line-height:1.02;padding-bottom:26px;border-bottom:1px solid var(--line2);margin-bottom:26px}
+    .s-close .box .ln{font-size:34px;line-height:1.75}
+    .s-close .cta{display:flex;flex-direction:column;align-items:center;gap:16px}
+    .s-close .cta img{width:300px;height:300px;border-radius:6px}
+    .s-close .cta b{font:400 48px/.95 var(--display);color:var(--green);text-transform:uppercase}
+    .s-close .cta a{font:600 30px var(--mono);color:#fff;text-decoration:none;border-bottom:3px solid var(--green)}
+  </style>
+  <div class="wrap">
+    <div class="box">
+      <h1><span class="build">Good agent memory</span><br><span class="build">isn’t about remembering</span><br><span class="build">everything.</span></h1>
+      <div class="ln" data-in="1">It’s about remembering <span class="hl-lime">what matters,</span></div>
+      <div class="ln" data-in="2">finding it at <span class="hl-lime">the right moment,</span></div>
+      <div class="ln" data-in="3">and knowing <span class="hl-lime">when to forget.</span></div>
+    </div>
+    <div class="cta" data-in="4"><img src="assets/qr-tryatlas.png" alt="QR code for mdb.link/tryatlas"><b>Try MongoDB Atlas</b><a href="https://mdb.link/tryatlas">mdb.link/tryatlas</a></div>
+  </div>
+  <aside class="notes">Slow down here. Three lines, one per section — then leave the QR up.</aside>
+  <script type="application/json" class="trace">{
+    "0":[["composer","render slide 44 · closing"]],
+    "1":[["extractor","what matters → durable, relevant, stated","ok"]],
+    "2":[["retriever","the right moment → search by meaning + pinned constraints","ok"]],
+    "3":[["consolidator","when to forget → TTL + explicit delete","ok"]],
+    "4":[["session","cta: mdb.link/tryatlas"]]
+  }</script>
+</section>
+<!-- 45-last-memory.html -->
+<section class="slide s-last grid-bg" data-title="One last memory">
+  <style>
+    .s-last .wrap{display:grid;grid-template-columns:1fr 420px;gap:60px;align-items:center;margin-top:10px}
+    .s-last .doc{font-size:26px;min-height:340px;padding:28px 34px}
+    .s-last .cta{display:flex;flex-direction:column;align-items:center;gap:14px}
+    .s-last .cta img{width:270px;height:270px;border-radius:6px}
+    .s-last .cta b{font:400 48px/.95 var(--display);color:var(--green);text-transform:uppercase}
+    .s-last .cta a{font:600 30px var(--mono);color:#fff;text-decoration:none;border-bottom:3px solid var(--green)}
+  </style>
+  <h2 class="build">One last memory</h2>
+  <div class="wrap">
+    <div class="doc type" data-in="1"><span class="lbl">memories · just now</span>{
+  <span class="k">"type"</span>: <span class="s">"episodic"</span>,
+  <span class="k">"content"</span>: <span class="s">"Spoke at Re:Invent 2026.
+              The audience was great."</span>,
+  <span class="k">"stated"</span>: <span class="b">true</span>,
+  <span class="k">"is_latest"</span>: <span class="b">true</span>,
+  <span class="k">"expires_at"</span>: <span class="b">null</span>
+}</div>
+    <div class="cta" data-in="2"><img src="assets/qr-tryatlas.png" alt="QR code for mdb.link/tryatlas"><b>Try MongoDB Atlas</b><a href="https://mdb.link/tryatlas">mdb.link/tryatlas</a></div>
+  </div>
+  <aside class="notes">Thank you. This one never expires.</aside>
+  <script type="application/json" class="trace">{
+    "0":[["composer","render slide 45 · final slide"]],
+    "1":[["session","record_turn(speaker, \"thank you, re:Invent!\")"],["extractor","classify → episodic · stated · conf 0.99 · keep forever"]],
+    "2":[["consolidator","insertOne(memories) → acknowledged · expires_at: null","ok"],["session","session reinvent-2026 closed · 1 memory kept","ok"]]
+  }</script>
+</section>
+
+  <div id="trace"><span class="hdr">AGENT TRACE · Atlas Agent Engine</span></div>
+  <div id="footer">
+    <span class="logo"><svg width="14" height="28" viewBox="0 0 14 28" aria-hidden="true"><path fill="#00ED64" d="M7 0c.6 2 2 3.6 3.3 5.2C13 8.6 14.4 12.3 13.8 16.6c-.6 4-2.8 6.6-6 8.4L7.4 28H6.5l-.4-3.1C2.6 23 .3 20.2.1 16 -.3 11.3 1.7 7.7 4.6 4.6 5.7 3.3 6.6 1.9 7 0z"/></svg>MongoDB.</span>
+    <span class="tag">BUILD ANYTHING. CHANGE EVERYTHING.</span>
+    <span class="num" id="num">1</span>
+  </div>
+</div>
+<div id="blackout"></div>
+<div id="help">→ / PageDown / clicker: next · ← back · B blackout · T trace · F fullscreen · S speaker notes</div>
+
+<script>
+(() => {
+  const stage = document.getElementById('stage');
+  const slides = [...document.querySelectorAll('.slide')];
+  const traceEl = document.getElementById('trace');
+  const statusEl = document.getElementById('status');
+  const statusText = document.getElementById('statusText');
+  const hooks = window.DeckHooks || {};
+  let cur = 0, step = 0, scale = 1;
+
+  /* ---------- scale stage to window ---------- */
+  function fit(){ scale = Math.min(innerWidth/1600, innerHeight/900); stage.style.transform = `scale(${scale})`; }
+  addEventListener('resize', fit); fit();
+
+  /* ---------- running animations: any keypress finishes them instantly ---------- */
+  const running = new Set();
+  function finishAll(){ [...running].forEach(r => r.finish()); }
+  function setBusy(){ statusEl.classList.toggle('busy', running.size > 0); }
+
+  // Types a list of elements in sequence, preserving inner markup (syntax colours, <br>s).
+  function typeSeq(els, cps = 55){
+    const nodes = [];
+    els.forEach(el => {
+      if (el._tpl === undefined) el._tpl = el.innerHTML; else el.innerHTML = el._tpl;
+      const w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+      while (w.nextNode()) nodes.push({ n: w.currentNode, full: w.currentNode.nodeValue, el });
+    });
+    const total = nodes.reduce((s, x) => s + x.full.length, 0);
+    nodes.forEach(x => x.n.nodeValue = '');
+    let done = false, raf, start = performance.now(), lastEl = null;
+    const ctl = { finish(){ if (done) return; done = true; cancelAnimationFrame(raf);
+      nodes.forEach(x => x.n.nodeValue = x.full); if (lastEl) lastEl.classList.remove('typing-caret');
+      running.delete(ctl); setBusy(); } };
+    function tick(now){
+      let left = Math.floor((now - start) / 1000 * cps);
+      for (const x of nodes){
+        const take = Math.min(left, x.full.length); x.n.nodeValue = x.full.slice(0, take); left -= take;
+        if (take < x.full.length){ if (lastEl !== x.el){ lastEl && lastEl.classList.remove('typing-caret'); lastEl = x.el; lastEl.classList.add('typing-caret'); } break; }
+      }
+      if (Math.floor((now - start) / 1000 * cps) >= total) return ctl.finish();
+      raf = requestAnimationFrame(tick);
+    }
+    running.add(ctl); setBusy(); raf = requestAnimationFrame(tick);
+    return ctl;
+  }
+  window.DeckType = typeSeq;
+  // Register a custom animation ({finish}) so the next clicker press completes it instead of advancing; returns a "done" callback.
+  window.DeckTrack = ctl => { running.add(ctl); setBusy(); return () => { running.delete(ctl); setBusy(); }; };
+
+  /* ---------- trace strip ---------- */
+  function stamp(i){ const s = 14*3600 + 2*60 + i*3; return `${String(Math.floor(s/3600)).padStart(2,'0')}:${String(Math.floor(s/60)%60).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`; }
+  function traceOf(s){ if (!s._trace){ const j = s.querySelector('script.trace'); s._trace = j ? JSON.parse(j.textContent) : {}; } return s._trace; }
+  function renderTrace(s, upto, animateStep){
+    traceEl.querySelectorAll('.ln').forEach(n => n.remove());
+    traceEl.style.display = s.classList.contains('no-trace') ? 'none' : '';
+    document.getElementById('footer').style.display = s.classList.contains('no-footer') ? 'none' : '';
+    statusEl.style.display = s.classList.contains('no-trace') ? 'none' : '';
+    const tr = traceOf(s); const fresh = []; let i = cur * 12;
+    Object.keys(tr).map(Number).sort((a,b)=>a-b).filter(k => k <= upto).forEach(k => {
+      tr[k].forEach(([agent, msg, kind]) => {
+        const ln = document.createElement('div');
+        ln.className = 'ln ' + (kind || '');
+        ln.innerHTML = `<span class="t">${stamp(i++)}</span><span class="a a-${agent}">${agent}</span><span class="m"></span>`;
+        ln.querySelector('.m').textContent = msg;
+        traceEl.appendChild(ln);
+        if (k === animateStep) fresh.push(ln.querySelector('.m'));
+        statusText.innerHTML = `<b>${agent}</b> · slide ${cur+1}/${slides.length}`;
+      });
+    });
+    const lns = traceEl.querySelectorAll('.ln'); [...lns].slice(0, -5).forEach(n => n.remove());
+    if (fresh.length) typeSeq(fresh.filter(m => m.isConnected), 140);
+  }
+
+  /* ---------- declarative per-step state ---------- */
+  const pairs = v => v.split(';').map(p => { const i = p.indexOf(':'); return [Number(p.slice(0,i)), p.slice(i+1)]; });
+  function maxStep(s){
+    if (s._max !== undefined) return s._max;
+    let m = 0;
+    s.querySelectorAll('[data-in],[data-out],[data-cls],[data-swap],[data-move]').forEach(el => {
+      ['in','out'].forEach(a => { if (el.dataset[a]) m = Math.max(m, +el.dataset[a]); });
+      ['cls','swap','move'].forEach(a => { if (el.dataset[a]) pairs(el.dataset[a]).forEach(([n]) => m = Math.max(m, n)); });
+    });
+    Object.keys(traceOf(s)).forEach(k => m = Math.max(m, +k));
+    if (s.dataset.steps) m = Math.max(m, +s.dataset.steps);
+    return (s._max = m);
+  }
+
+  function apply(s, st, animate){
+    if (!animate){ s.classList.add('instant'); requestAnimationFrame(() => requestAnimationFrame(() => s.classList.remove('instant'))); }
+    const scope = el => el.closest('.slide') === s;
+    s.querySelectorAll('[data-in]').forEach(el => {
+      const gone = el.dataset.out && st >= +el.dataset.out;
+      const on = st >= +el.dataset.in && !gone;
+      const was = el.classList.contains('on');
+      el.classList.toggle('on', on);
+      el.style.display = gone ? 'none' : '';
+      if (on && !was && animate && el.classList.contains('type')) typeSeq([el], el.classList.contains('doc') ? 120 : 45);
+    });
+    s.querySelectorAll('[data-cls]').forEach(el => {
+      const want = new Map();
+      pairs(el.dataset.cls).forEach(([n, c]) => { const neg = c.startsWith('-'); const name = neg ? c.slice(1) : c;
+        if (!want.has(name)) want.set(name, false); if (st >= n) want.set(name, !neg); });
+      want.forEach((v, c) => el.classList.toggle(c, v));
+    });
+    s.querySelectorAll('[data-swap]').forEach(el => {
+      if (el._orig === undefined) el._orig = el.textContent;
+      let txt = el._orig; pairs(el.dataset.swap).forEach(([n, t]) => { if (st >= n) txt = t; });
+      if (txt !== el.textContent){ el.textContent = txt; if (animate){ el.classList.remove('swapped'); void el.offsetWidth; el.classList.add('swapped'); } }
+    });
+    const movers = [...s.querySelectorAll('[data-move]')];
+    if (movers.length){
+      const before = new Map(movers.map(el => [el, el.getBoundingClientRect()]));
+      movers.forEach((el, idx) => {
+        if (!el._home){ el._home = el.parentElement; el._idx = idx; }
+        let target = el._home; pairs(el.dataset.move).forEach(([n, id]) => { if (st >= n) target = document.getElementById(id); });
+        if (el.parentElement !== target){
+          const after = [...target.querySelectorAll('[data-move]')].find(o => o._idx > el._idx);
+          target.insertBefore(el, after || null);
+        }
+      });
+      if (animate) movers.forEach(el => {
+        const a = before.get(el), b = el.getBoundingClientRect();
+        const dx = (a.left - b.left) / scale, dy = (a.top - b.top) / scale;
+        if (Math.abs(dx) + Math.abs(dy) > 1) el.animate([{ transform: `translate(${dx}px,${dy}px)` }, { transform: 'none' }], { duration: 650, easing: 'cubic-bezier(.2,.8,.2,1)' });
+      });
+    }
+    const h = hooks[s.dataset.hook]; if (h && h.apply) h.apply(s, st, animate);
+  }
+
+  slides.forEach(s => { const h = hooks[s.dataset.hook]; if (h && h.init) h.init(s); });
+
+  /* ---------- speaker notes window (S) ---------- */
+  let notesWin = null;
+  function notesOf(s){ const n = s.querySelector('aside.notes'); return n ? n.innerHTML : '<i>No notes for this slide.</i>'; }
+  function updateNotes(){
+    if (!notesWin || notesWin.closed) return;
+    const s = slides[cur], nx = slides[cur + 1];
+    notesWin.document.body.innerHTML = `<div style="font:14px system-ui;color:#8aa1ab">Slide ${cur+1}/${slides.length} · step ${step}/${maxStep(s)} · ${s.dataset.title||''}</div>
+      <div style="font:26px/1.45 system-ui;margin:14px 0 22px">${notesOf(s)}</div>
+      <div style="font:14px system-ui;color:#8aa1ab">Next: ${nx ? nx.dataset.title : '— end —'}</div>
+      <div id="clock" style="font:600 40px ui-monospace;margin-top:18px;color:#00ED64"></div>`;
+  }
+  function openNotes(){
+    notesWin = window.open('', 'deck-notes', 'width=760,height=560');
+    if (!notesWin) return;
+    notesWin.document.title = 'Speaker notes';
+    notesWin.document.documentElement.style.background = '#001E2B';
+    notesWin.document.body.style.cssText = 'margin:24px;color:#fff;background:#001E2B';
+    notesWin.addEventListener('keydown', onKey);
+    const t0 = Date.now();
+    notesWin.setInterval(() => { const c = notesWin.document.getElementById('clock'); if (c){ const s = Math.floor((Date.now()-t0)/1000); c.textContent = `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`; } }, 1000);
+    updateNotes();
+  }
+
+  /* ---------- navigation ---------- */
+  function show(i, st, mode){ // mode: 'enter' (animated build), 'step' (animated step), 'jump' (instant)
+    finishAll();
+    const prev = slides[cur]; cur = i; step = st; const s = slides[cur];
+    if (prev !== s) prev.classList.remove('active');
+    s.classList.add('active');
+    apply(s, step, mode !== 'jump');
+    if (mode === 'enter'){ const builds = [...s.querySelectorAll('.build')]; if (builds.length) typeSeq(builds, 38); }
+    renderTrace(s, step, mode === 'jump' ? -1 : step);
+    document.getElementById('num').textContent = cur + 1;
+    document.getElementById('progress').style.width = ((cur + (step + 1) / (maxStep(s) + 1)) / slides.length * 100) + '%';
+    history.replaceState(null, '', `#/${cur+1}/${step}`);
+    updateNotes();
+  }
+  function next(){
+    if (running.size){ finishAll(); return; }          // first press completes a running build
+    if (step < maxStep(slides[cur])) show(cur, step + 1, 'step');
+    else if (cur < slides.length - 1) show(cur + 1, 0, 'enter');
+  }
+  function prev(){
+    if (step > 0) show(cur, step - 1, 'jump');
+    else if (cur > 0) show(cur - 1, maxStep(slides[cur - 1]), 'jump');
+  }
+  function onKey(e){
+    const k = e.key;
+    if (['ArrowRight','ArrowDown','PageDown',' ','Enter','n','N'].includes(k)){ e.preventDefault(); next(); }
+    else if (['ArrowLeft','ArrowUp','PageUp','Backspace','p','P'].includes(k)){ e.preventDefault(); prev(); }
+    else if (k === 'Home') show(0, 0, 'enter');
+    else if (k === 'End') show(slides.length - 1, maxStep(slides.at(-1)), 'jump');
+    else if (k === 'b' || k === 'B' || k === '.') document.getElementById('blackout').classList.toggle('on');
+    else if (k === 't' || k === 'T') traceEl.classList.toggle('hidden');
+    else if (k === 's' || k === 'S') openNotes();
+    else if (k === 'f' || k === 'F' || k === 'F5') { e.preventDefault(); document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen(); }
+  }
+  addEventListener('keydown', onKey);
+  stage.addEventListener('click', e => { if (!e.target.closest('a')) next(); });
+
+  setTimeout(() => document.getElementById('help').style.opacity = 0, 6000);
+  const m = location.hash.match(/#\/(\d+)\/(\d+)/);
+  if (m) document.getElementById("help").style.display = "none";
+  if (m){ const i = Math.min(slides.length, Math.max(1, +m[1])) - 1; show(i, Math.min(+m[2], maxStep(slides[i])), "jump"); } else show(0, 0, "enter");
+  window.DeckGo = (n, st) => show(n - 1, st ?? 0, 'jump');   // for screenshots / debugging
+})();
+</script>
+</body>
+</html>

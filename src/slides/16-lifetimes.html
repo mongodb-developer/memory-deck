@@ -1,0 +1,42 @@
+<section class="slide s-life" data-title="You decided how long each one should live">
+  <style>
+    .s-life .pool{display:flex;flex-wrap:wrap;gap:12px;min-height:64px;padding:12px;border:1px dashed var(--line2);border-radius:12px;margin-bottom:22px;position:relative}
+    .s-life .pool::before{content:"INCOMING · your poll answers";position:absolute;top:-10px;left:14px;background:var(--bg);padding:0 8px;font:600 12px var(--mono);color:var(--muted);letter-spacing:1px}
+    .s-life .card{padding:11px 16px;border-radius:9px;background:var(--panel2);border:1px solid var(--line2);font-size:21px;white-space:nowrap}
+    .s-life .buckets{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+    .s-life .bucket{border-radius:12px;border:1px solid var(--line);background:var(--panel);min-height:300px;padding:0 14px 14px;display:flex;flex-direction:column;gap:10px}
+    .s-life .bucket header{margin:0 -14px 6px;padding:12px 14px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:baseline}
+    .s-life .bucket header b{font:400 30px var(--display);letter-spacing:.5px}
+    .s-life .bucket header span{font:500 13px var(--mono);color:var(--muted)}
+    .s-life .b-always header b{color:var(--green)} .s-life .b-always .card{border-color:var(--green);background:rgba(0,237,100,.1)}
+    .s-life .b-useful header b{color:var(--blue)} .s-life .b-useful .card{border-color:var(--blue)}
+    .s-life .b-days header b{color:var(--amber)} .s-life .b-days .card{border-color:var(--amber)}
+    .s-life .b-no header b{color:var(--muted)} .s-life .b-no .card{color:var(--dim);text-decoration:line-through;border-style:dashed}
+    .s-life .card.scan{box-shadow:0 0 0 2px var(--green),0 0 22px rgba(0,237,100,.35)}
+  </style>
+  <h2 class="build">You decided how long each one should live</h2>
+  <div class="pool">
+    <div class="card" data-move="1:bk-always" data-cls="1:scan;2:-scan">“I’m allergic to gluten.”</div>
+    <div class="card" data-move="2:bk-useful">“I like quick meals.”</div>
+    <div class="card" data-move="3:bk-useful">“I shop for two.”</div>
+    <div class="card" data-move="4:bk-days">“I’m hosting friends on Saturday.”</div>
+    <div class="card" data-move="5:bk-no">“I need lemons tonight.”</div>
+    <div class="card" data-move="6:bk-no">“I just bought a blender.”</div>
+  </div>
+  <div class="buckets">
+    <div class="bucket b-always" id="bk-always"><header><b>Always</b><span>ttl ∞</span></header></div>
+    <div class="bucket b-useful" id="bk-useful"><header><b>Yes, useful</b><span>until updated</span></header></div>
+    <div class="bucket b-days" id="bk-days"><header><b>For a few days</b><span>TTL index</span></header></div>
+    <div class="bucket b-no" id="bk-no"><header><b>No</b><span>not stored</span></header></div>
+  </div>
+  <aside class="notes">Replay the poll result. Each click, the extractor classifies one answer — same call the audience just made.</aside>
+  <script type="application/json" class="trace">{
+    "0":[["composer","render slide 16 · 6 candidate facts from the poll"],["extractor","snapshot ready · waiting to classify"]],
+    "1":[["extractor","classify(\"I'm allergic to gluten.\") → semantic · stated · conf 0.98 · ttl ∞","ok"]],
+    "2":[["extractor","classify(\"I like quick meals.\") → semantic · stated · conf 0.91"]],
+    "3":[["extractor","classify(\"I shop for two.\") → semantic · stated · conf 0.88"]],
+    "4":[["extractor","classify(\"hosting friends Saturday\") → episodic · expires_at=+5d"]],
+    "5":[["extractor","classify(\"I need lemons tonight.\") → transient · skip","warn"]],
+    "6":[["extractor","classify(\"bought a blender\") → low relevance to groceries · skip","warn"],["extractor","stored 4 · dropped 2 · async, user never waited","ok"]]
+  }</script>
+</section>

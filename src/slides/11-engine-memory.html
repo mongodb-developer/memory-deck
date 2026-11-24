@@ -1,0 +1,27 @@
+<section class="slide s-eng" data-title="Agent Engine memory">
+  <style>
+    .s-eng .flow{display:grid;grid-template-columns:1fr 70px 1fr 70px 1fr;align-items:start;margin-top:10px}
+    .s-eng .st .box{background:var(--green);color:var(--bg);height:84px;display:grid;place-items:center;font:700 27px var(--body)}
+    .s-eng .st p{font-size:25px;line-height:1.35;margin-top:22px;padding-right:20px}
+    .s-eng .st code{display:block;font:500 17px var(--mono);color:var(--amber);margin-top:12px}
+    .s-eng .arr{height:84px;display:grid;place-items:center;font:400 40px var(--display);color:var(--green)}
+    .s-eng .home{margin-top:60px;border:1.5px solid var(--green);height:120px;display:grid;place-items:center;font:700 32px var(--body)}
+  </style>
+  <h2 class="build">Agent Engine memory</h2>
+  <div class="flow">
+    <div class="st" data-in="1"><div class="box">Saves each turn</div><p>Every message in the conversation is recorded.</p><code>record_turn()</code></div>
+    <div class="arr" data-in="2">→</div>
+    <div class="st" data-in="2"><div class="box">Decides what to keep</div><p>Durable facts become long-term memories.</p><code>extraction (async)</code></div>
+    <div class="arr" data-in="3">→</div>
+    <div class="st" data-in="3"><div class="box">Helps find them</div><p>The right memories reach your agent when it needs them.</p><code>build_context()</code></div>
+  </div>
+  <div class="home" data-in="4">All memories live in your MongoDB database in the cloud.</div>
+  <aside class="notes">Three jobs: save, decide, find. And the data is yours — it lives in your own Atlas database.</aside>
+  <script type="application/json" class="trace">{
+    "0":[["composer","render slide 11 · memory pipeline"]],
+    "1":[["session","record_turn(session_id, role=\"user\", text) → short-term memory"]],
+    "2":[["extractor","snapshot → classify → keep durable facts as long-term memories"]],
+    "3":[["retriever","build_context(query) → $vectorSearch → top-k memories"]],
+    "4":[["consolidator","storage: your cluster · db agent_memory · collections: turns, memories","ok"]]
+  }</script>
+</section>

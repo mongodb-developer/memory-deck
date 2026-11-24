@@ -1,0 +1,56 @@
+<section class="slide s-truth" data-title="What's the truth?">
+  <style>
+    .s-truth .grid{display:grid;grid-template-columns:420px 80px 400px 1fr;gap:0 28px;align-items:start}
+    .s-truth .lbl{font:400 30px var(--display);color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px}
+    .s-truth .quote{border:1px solid var(--line2);background:var(--panel);border-radius:10px;padding:30px 26px;font-size:25px;line-height:1.35;text-align:center;min-height:156px;display:grid;place-items:center}
+    .s-truth .col1 .lbl + .quote{margin-bottom:26px}
+    .s-truth .arrows{position:relative;height:420px}
+    .s-truth .arrows svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+    .s-truth .arrows path{stroke:var(--green);stroke-width:3;fill:none;stroke-dasharray:140;stroke-dashoffset:140;transition:stroke-dashoffset .6s ease}
+    .s-truth .arrows path.on{stroke-dashoffset:0}
+    .s-truth .mem{border:2px solid var(--green);border-radius:10px;padding:18px 22px 22px;min-height:420px;margin-top:42px}
+    .s-truth .mem h4{font:400 30px var(--display);color:var(--green);text-transform:uppercase;text-align:center;letter-spacing:.5px;margin-bottom:18px}
+    .s-truth .fact{background:var(--green);color:var(--bg);font:700 24px var(--body);text-align:center;padding:20px;border-radius:4px;margin-bottom:14px;transition:box-shadow .4s,background .4s,color .4s}
+    .s-truth .fact.clash{background:transparent;color:#fff;box-shadow:0 0 0 3px var(--red),0 0 24px rgba(255,105,96,.4)}
+    .s-truth .fact .tag{display:block;font:600 12px var(--mono);letter-spacing:1px;margin-top:6px;opacity:.75}
+    .s-truth .ask{font:700 25px/1.3 var(--body);color:var(--blue);margin-top:18px}
+    .s-truth .side .lbl{color:#fff}
+    .s-truth .life{font-size:24px;line-height:1.4}
+    .s-truth .life b{color:var(--green)}
+    .s-truth .punch{font:700 27px/1.35 var(--body);margin-top:44px}
+    .s-truth .punch em{font-style:normal;color:var(--green)}
+  </style>
+  <h2 class="build">What’s the truth?</h2>
+  <div class="grid">
+    <div class="col1">
+      <div data-in="1"><div class="lbl">Before</div><div class="quote">“I love pasta! Carbonara, lasagne, all of it.”</div></div>
+      <div data-in="2"><div class="lbl">Now</div><div class="quote">“I can’t eat gluten anymore.”</div></div>
+    </div>
+    <div class="arrows">
+      <svg viewBox="0 0 80 420" preserveAspectRatio="none">
+        <path d="M0 110 L78 130" data-cls="1:on"/>
+        <path d="M0 330 L78 230" data-cls="2:on"/>
+      </svg>
+    </div>
+    <div class="mem">
+      <h4>Agent memory</h4>
+      <div class="fact" data-in="1" data-cls="2:clash">Loves pasta.<span class="tag">semantic · v1 · is_latest: true</span></div>
+      <div class="fact" data-in="2" data-cls="2:clash">Can’t eat gluten.<span class="tag">semantic · v1 · is_latest: true</span></div>
+      <div class="ask" data-in="3">Should it suggest carbonara for dinner?</div>
+    </div>
+    <div class="side">
+      <div data-in="4"><div class="lbl">Life changes</div>
+        <div class="life"><b>A year ago:</b> “I like quick meals.”<br><b>Now:</b> “I’ve got time while waiting for Claude - I can cook a slow recipe.”</div></div>
+      <div class="punch" data-in="5">An agent that never updates isn’t forgetful. It’s <em>confidently wrong</em>.</div>
+    </div>
+  </div>
+  <aside class="notes">Both facts are “true” in storage. Without an update step the agent has no idea which one wins.</aside>
+  <script type="application/json" class="trace">{
+    "0":[["composer","render slide 38 · consolidation: DISABLED for this example","warn"]],
+    "1":[["extractor","2025-03 · \"I love pasta!\" → semantic · stated · insertOne()"]],
+    "2":[["extractor","2026-10 · \"I can't eat gluten anymore.\" → semantic · stated · insertOne()"],["guard","2 memories, both is_latest: true · contradiction not resolved","warn"]],
+    "3":[["retriever","$vectorSearch(\"dinner\") → \"Loves pasta.\" 0.82 · \"Can't eat gluten.\" 0.41"],["guard","top result suggests carbonara · contains gluten","err"]],
+    "4":[["extractor","\"I can cook a slow recipe\" vs. \"I like quick meals\" · same topic, opposite value","warn"]],
+    "5":[["consolidator","fix: compare each new fact with existing ones before insert","ok"]]
+  }</script>
+</section>

@@ -1,0 +1,37 @@
+<section class="slide s-pin" data-title="Pin the constraints">
+  <style>
+    .s-pin .row{display:grid;grid-template-columns:560px 110px 1fr;align-items:start;margin-top:20px}
+    .s-pin .fixed{border:1px solid var(--green);background:rgba(0,237,100,.1);border-radius:4px;padding:26px 28px;text-align:center;margin-top:44px}
+    .s-pin .fixed b{display:block;font:400 30px var(--display);color:var(--green);letter-spacing:.5px;text-transform:uppercase;margin-bottom:6px}
+    .s-pin .fixed span{font:700 28px/1.3 var(--body)}
+    .s-pin .fixed .mono{display:block;margin-top:16px;font:400 16px var(--mono);color:var(--muted);text-align:left}
+    .s-pin .arrow{font:400 60px var(--display);color:var(--green);text-align:center;margin-top:92px}
+    .s-pin .prompt .ttl{font:400 30px var(--display);color:#cfd8dc;letter-spacing:.5px;margin-bottom:10px}
+    .s-pin .slot{position:relative;border-radius:4px;padding:26px 28px;text-align:center;font-size:26px;margin-bottom:16px}
+    .s-pin .slot i{position:absolute;right:12px;top:8px;font:500 14px var(--mono);font-style:normal}
+    .s-pin .slot.c{background:var(--green);color:var(--bg);font-weight:700} .s-pin .slot.c i{color:#00502a}
+    .s-pin .slot.c .pinned{position:absolute;left:12px;top:8px;font:600 13px var(--mono);letter-spacing:1px}
+    .s-pin .slot.r{border:1px solid var(--green)} .s-pin .slot.r i{color:var(--muted)}
+    .s-pin .slot.q{border:1px solid #cfd8dc} .s-pin .slot.q i{color:var(--muted)}
+  </style>
+  <h2 class="build">Pin the constraints</h2>
+  <div class="row">
+    <div class="fixed" data-in="1"><b>Fixed constraints search</b><span>“Allergies, intolerances and dietary restrictions”</span>
+      <span class="mono">find({type: "constraint"}) · runs on every request</span></div>
+    <div class="arrow" data-in="2">→</div>
+    <div class="prompt">
+      <div class="ttl">THE PROMPT</div>
+      <div class="slot c" data-in="2"><span class="pinned">📌 PINNED</span><i>12 tok</i>Constraints (always apply)<br>Allergic to gluten</div>
+      <div class="slot r" data-in="3"><i>96 tok</i>Relevant memories from search</div>
+      <div class="slot q" data-in="4"><i>14 tok</i>The request</div>
+    </div>
+  </div>
+  <aside class="notes">Two retrievals: a fixed one for constraints that always runs, and semantic search for the rest. Constraints go first and never get truncated.</aside>
+  <script type="application/json" class="trace">{
+    "0":[["composer","render slide 33 · assembling prompt"]],
+    "1":[["retriever","find({type: \"constraint\", category: {$in: [\"allergy\", \"intolerance\", \"diet\"]}}) → 1 doc"]],
+    "2":[["composer","prompt[0] = constraints · \"Allergic to gluten\" · 12 tokens · pinned","ok"]],
+    "3":[["retriever","$vectorSearch(\"quick dinner tonight\", limit: 3) → 3 memories · 96 tokens"]],
+    "4":[["composer","prompt assembled · 122 tokens · allergy included","ok"]]
+  }</script>
+</section>
