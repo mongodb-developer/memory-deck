@@ -27,6 +27,10 @@ body{display:grid;place-items:center;cursor:default}
 aside.notes{display:none}
 
 /* ---------- chrome: progress, status pill, footer, trace ---------- */
+
+/* ---------- skill-check tag ---------- */
+.skill-tag{position:absolute;top:25px;right:80px;display:flex;align-items:center;gap:14px;height:46px;padding:0 14px 0 18px;border-radius:6px;background:#F0A6FF;color:var(--bg);font:700 22px var(--mono);letter-spacing:2px;z-index:4}
+.skill-tag svg{width:32px;height:32px;flex:none}
 #progress{position:absolute;top:0;left:0;height:4px;background:var(--green);transition:width .4s ease;z-index:5}
 #status{position:absolute;top:22px;right:28px;z-index:5;display:flex;align-items:center;gap:10px;
   font:500 15px var(--mono);color:var(--muted);padding:7px 14px;border:1px solid var(--line);border-radius:999px;background:rgba(2,38,52,.85)}
@@ -197,6 +201,7 @@ h2{font-size:64px;margin-bottom:36px}
     traceEl.style.display = s.classList.contains('no-trace') ? 'none' : '';
     document.getElementById('footer').style.display = s.classList.contains('no-footer') ? 'none' : '';
     statusEl.style.display = s.classList.contains('no-trace') ? 'none' : '';
+    statusEl.style.right = s.querySelector('.skill-tag') ? '250px' : '';
     const tr = traceOf(s); const fresh = []; let i = cur * 12;
     Object.keys(tr).map(Number).sort((a,b)=>a-b).filter(k => k <= upto).forEach(k => {
       tr[k].forEach(([agent, msg, kind]) => {

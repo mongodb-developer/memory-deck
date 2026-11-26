@@ -27,6 +27,10 @@ body{display:grid;place-items:center;cursor:default}
 aside.notes{display:none}
 
 /* ---------- chrome: progress, status pill, footer, trace ---------- */
+
+/* ---------- skill-check tag ---------- */
+.skill-tag{position:absolute;top:25px;right:80px;display:flex;align-items:center;gap:14px;height:46px;padding:0 14px 0 18px;border-radius:6px;background:#F0A6FF;color:var(--bg);font:700 22px var(--mono);letter-spacing:2px;z-index:4}
+.skill-tag svg{width:32px;height:32px;flex:none}
 #progress{position:absolute;top:0;left:0;height:4px;background:var(--green);transition:width .4s ease;z-index:5}
 #status{position:absolute;top:22px;right:28px;z-index:5;display:flex;align-items:center;gap:10px;
   font:500 15px var(--mono);color:var(--muted);padding:7px 14px;border:1px solid var(--line);border-radius:999px;background:rgba(2,38,52,.85)}
@@ -433,6 +437,47 @@ h2{font-size:64px;margin-bottom:36px}
     "4":[["retriever","projection: 200 turns ≈ 9,600 tokens per prompt · O(n) growth","warn"]]
   }</script>
 </section>
+<!-- 05-x-conversation-lives.html -->
+<section class="slide s-stm" data-title="Where does the conversation live?">
+  <div class="skill-tag" title="Covered by the Memory for AI Applications skill check">SKILL<svg viewBox="0 0 32 32" aria-hidden="true"><rect x="5" y="5" width="22" height="22" rx="3" fill="#001E2B"/><rect x="5" y="5" width="22" height="22" rx="3" fill="#001E2B" transform="rotate(45 16 16)"/><path d="M10.5 16.5l3.8 3.8 7.2-7.6" fill="none" stroke="#F0A6FF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+  <style>
+    .s-stm .sub{font-size:30px;margin:10px 0 22px 14px}
+    .s-stm .wrap{display:grid;grid-template-columns:808px 1fr;gap:48px;align-items:stretch}
+    .s-stm .doc{font-size:26px;min-height:430px;padding:30px 40px;line-height:1.28}
+    .s-stm .notes-col{display:flex;flex-direction:column;justify-content:space-between;padding:6px 0}
+    .s-stm .nt{border-left:8px solid var(--green);padding:6px 0 6px 32px;font:700 32px/1.15 var(--body)}
+    .s-stm .nt code{display:block;font:600 36px var(--mono);color:var(--green);margin-bottom:6px}
+    .s-stm .nt.two{border-color:var(--purple)} .s-stm .nt.two code{color:var(--purple)}
+    .s-stm .nt.three{border-color:#fff} .s-stm .nt.three code{color:#fff}
+  </style>
+  <h2 class="build">Where does the conversation live?</h2>
+  <p class="sub" data-in="1">Short-term memory: one document per conversation.</p>
+  <div class="wrap">
+    <div class="doc" data-in="1"><span class="lbl">sessions</span>{
+  <span class="k">"user_id"</span>: <span class="s">"shopper-42"</span>,
+  <span class="k">"session_id"</span>: <span class="b">"session-987"</span>,
+  <span class="k">"history"</span>: [
+    { <span class="k">"role"</span>: <span class="s">"user"</span>,
+      <span class="k">"content"</span>: <span class="s">"I'm allergic to gluten."</span> },
+    { <span class="k">"role"</span>: <span class="s">"agent"</span>,
+      <span class="k">"content"</span>: <span class="s">"I'll keep that in mind."</span> }
+  ]
+}</div>
+    <div class="notes-col">
+      <div class="nt" data-in="2"><code>user_id</code>Whose memory it is.</div>
+      <div class="nt two" data-in="3"><code>session_id</code>Which conversation.</div>
+      <div class="nt three" data-in="4"><code>history</code>The conversation, in order.</div>
+    </div>
+  </div>
+  <aside class="notes">Short-term memory is simply the conversation stored as one document per session. Walk the three fields: whose, which, and the ordered history.</aside>
+  <script type="application/json" class="trace">{
+    "0":[["composer","render slide 06 · short-term memory"]],
+    "1":[["session","insertOne(sessions) · one document per conversation","ok"]],
+    "2":[["session","user_id = shopper-42 · scopes memory to one person"]],
+    "3":[["session","session_id = session-987 · scopes to one conversation"]],
+    "4":[["session","history[] appended in order · 2 messages","ok"]]
+  }</script>
+</section>
 <!-- 06-until-it-doesnt.html -->
 <section class="slide s-until" data-title="It works fine. Until it doesn’t.">
   <style>
@@ -453,7 +498,7 @@ h2{font-size:64px;margin-bottom:36px}
   </div>
   <aside class="notes">Three ways “resend everything” breaks: space, relevance, and change. Land “until it doesn’t” last.</aside>
   <script type="application/json" class="trace">{
-    "0":[["composer","render slide 06 · strategy: resend full history · status OK","ok"]],
+    "0":[["composer","render slide 07 · strategy: resend full history · status OK","ok"]],
     "1":[["session","context window 99% full · next turn will be truncated","warn"]],
     "2":[["retriever","loaded 214 past chats · 3 relevant to this request","warn"]],
     "3":[["consolidator","conflict: \"loves pasta\" vs \"can't eat gluten\" · no way to resolve","warn"]],
@@ -474,7 +519,7 @@ h2{font-size:64px;margin-bottom:36px}
   </div>
   <aside class="notes">Our roadmap for the session. Each one maps to a stage of the memory pipeline.</aside>
   <script type="application/json" class="trace">{
-    "0":[["composer","render slide 07 · planning session agenda"]],
+    "0":[["composer","render slide 08 · planning session agenda"]],
     "1":[["extractor","task 1 · selection: what's worth remembering"]],
     "2":[["retriever","task 2 · retrieval: right memory, right time"]],
     "3":[["consolidator","task 3 · lifecycle: update and forget"],["composer","plan ready · 3 tasks","ok"]]
@@ -494,7 +539,7 @@ h2{font-size:64px;margin-bottom:36px}
   </div>
   <aside class="notes">Give people a few seconds to scan before moving on.</aside>
   <script type="application/json" class="trace">{
-    "0":[["composer","render slide 08 · share link for these slides"],["session","waiting for audience to scan… (take your time)"]]
+    "0":[["composer","render slide 09 · share link for these slides"],["session","waiting for audience to scan… (take your time)"]]
   }</script>
 </section>
 <!-- 09-meet-agent.html -->
@@ -527,7 +572,7 @@ h2{font-size:64px;margin-bottom:36px}
   </div>
   <aside class="notes">Our running example. It reasons, finds products by meaning, and fills a cart — but so far it has no memory.</aside>
   <script type="application/json" class="trace">{
-    "0":[["composer","render slide 09 · introducing grocery-agent"]],
+    "0":[["composer","render slide 10 · introducing grocery-agent"]],
     "1":[["session","turn 1 · user: \"quick dinner tonight\""]],
     "2":[["session","tool plan_meal(time<=20min) → 2 options"]],
     "3":[["session","turn 2 · user picks pasta"]],
@@ -536,6 +581,7 @@ h2{font-size:64px;margin-bottom:36px}
 </section>
 <!-- 10-tools.html -->
 <section class="slide s-tools" data-title="Before we start: the tools">
+  <div class="skill-tag" title="Covered by the Memory for AI Applications skill check">SKILL<svg viewBox="0 0 32 32" aria-hidden="true"><rect x="5" y="5" width="22" height="22" rx="3" fill="#001E2B"/><rect x="5" y="5" width="22" height="22" rx="3" fill="#001E2B" transform="rotate(45 16 16)"/><path d="M10.5 16.5l3.8 3.8 7.2-7.6" fill="none" stroke="#F0A6FF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
   <style>
     .s-tools .tiers{display:grid;grid-template-columns:330px 1fr;column-gap:30px}
     .s-tools .lab b{display:block;font:400 34px/1 var(--display);color:var(--green);text-transform:uppercase}
@@ -571,7 +617,7 @@ h2{font-size:64px;margin-bottom:36px}
   </div>
   <aside class="notes">Three layers: our agent code on Bedrock, Atlas Agent Engine for runtime and memory, and MongoDB Atlas underneath.</aside>
   <script type="application/json" class="trace">{
-    "0":[["composer","render slide 10 · stack diagram"],["session","agent: grocery-agent · model: Amazon Bedrock"]],
+    "0":[["composer","render slide 11 · stack diagram"],["session","agent: grocery-agent · model: Amazon Bedrock"]],
     "1":[["session","connect Atlas Agent Engine · runtime + memory · RBAC policies loaded","ok"]],
     "2":[["retriever","backing store: MongoDB Atlas · search index ✓ · vector index ✓ (1,024 dims)","ok"]]
   }</script>
@@ -597,7 +643,7 @@ h2{font-size:64px;margin-bottom:36px}
   <div class="home" data-in="4">All memories live in your MongoDB database in the cloud.</div>
   <aside class="notes">Three jobs: save, decide, find. And the data is yours — it lives in your own Atlas database.</aside>
   <script type="application/json" class="trace">{
-    "0":[["composer","render slide 11 · memory pipeline"]],
+    "0":[["composer","render slide 12 · memory pipeline"]],
     "1":[["session","record_turn(session_id, role=\"user\", text) → short-term memory"]],
     "2":[["extractor","snapshot → classify → keep durable facts as long-term memories"]],
     "3":[["retriever","build_context(query) → $vectorSearch → top-k memories"]],
@@ -646,7 +692,7 @@ h2{font-size:64px;margin-bottom:36px}
   </div>
   <aside class="notes">Bedrock runs the model and tool loop; three callbacks call Agent Engine. Clicks 2–4 light up record_turn, extraction, build_context. Everything lands in your own Atlas cluster.</aside>
   <script type="application/json" class="trace">{
-    "0":[["composer","render slide 12 · demo architecture"],["session","bedrock.converse(\"grocery-agent\") · tools: plan_meal, search_products, add_to_cart"]],
+    "0":[["composer","render slide 13 · demo architecture"],["session","bedrock.converse(\"grocery-agent\") · tools: plan_meal, search_products, add_to_cart"]],
     "1":[["session","register callbacks: on_model_response, on_turn_complete, on_model_request"]],
     "2":[["session","on_model_response → agent_engine.record_turn(session_id, turn)"]],
     "3":[["extractor","on_turn_complete → extraction queued · runs async on snapshot"]],
@@ -662,7 +708,7 @@ h2{font-size:64px;margin-bottom:36px}
   </div>
   <aside class="notes">Section one: deciding what becomes a memory at all.</aside>
   <script type="application/json" class="trace">{
-    "0":[["composer","render slide 13 · section 01 of 03"],["session","checkpoint: intro done · next: storage decisions","ok"]]
+    "0":[["composer","render slide 14 · section 01 of 03"],["session","checkpoint: intro done · next: storage decisions","ok"]]
   }</script>
 </section>
 <!-- 14-agenda-1.html -->
@@ -675,7 +721,7 @@ h2{font-size:64px;margin-bottom:36px}
   </div>
   <aside class="notes">Quick recap of the map, then spotlight problem one.</aside>
   <script type="application/json" class="trace">{
-    "0":[["composer","render slide 14 · agenda"],["retriever","recall(\"agenda\") → 3 open problems"]],
+    "0":[["composer","render slide 15 · agenda"],["retriever","recall(\"agenda\") → 3 open problems"]],
     "1":[["composer","focus → problem 1: what’s worth remembering?","ok"]]
   }</script>
 </section>
@@ -705,7 +751,7 @@ h2{font-size:64px;margin-bottom:36px}
   <div class="vote" data-in="1"><span class="q">You’re the extractor.</span>For each one: <span class="opt">ALWAYS</span><span class="opt">YES, USEFUL</span><span class="opt">A FEW DAYS</span><span class="opt">NO</span></div>
   <aside class="notes">Ask the room to vote on each statement: keep forever, keep, keep for a few days, or don’t keep. Next slide replays the answers.</aside>
   <script type="application/json" class="trace">{
-    "0":[["composer","render slide 15 · poll"],["session","snapshot of last conversation → 6 candidate facts"]],
+    "0":[["composer","render slide 16 · poll"],["session","snapshot of last conversation → 6 candidate facts"]],
     "1":[["extractor","LLM extractor paused · delegating classification to 600 humans","warn"],["session","collecting votes …"]]
   }</script>
 </section>
@@ -743,7 +789,7 @@ h2{font-size:64px;margin-bottom:36px}
   </div>
   <aside class="notes">Replay the poll result. Each click, the extractor classifies one answer — same call the audience just made.</aside>
   <script type="application/json" class="trace">{
-    "0":[["composer","render slide 16 · 6 candidate facts from the poll"],["extractor","snapshot ready · waiting to classify"]],
+    "0":[["composer","render slide 17 · 6 candidate facts from the poll"],["extractor","snapshot ready · waiting to classify"]],
     "1":[["extractor","classify(\"I'm allergic to gluten.\") → semantic · stated · conf 0.98 · ttl ∞","ok"]],
     "2":[["extractor","classify(\"I like quick meals.\") → semantic · stated · conf 0.91"]],
     "3":[["extractor","classify(\"I shop for two.\") → semantic · stated · conf 0.88"]],
@@ -769,7 +815,7 @@ h2{font-size:64px;margin-bottom:36px}
   </div>
   <aside class="notes">Two decisions per fact: its type and its lifetime. That’s the whole job of extraction.</aside>
   <script type="application/json" class="trace">{
-    "0":[["composer","render slide 17"],["session","votes received · 6/6 facts classified by audience","ok"]],
+    "0":[["composer","render slide 18"],["session","votes received · 6/6 facts classified by audience","ok"]],
     "1":[["extractor","diff(audience, extractor) → same buckets on 6/6 facts","ok"]],
     "2":[["extractor","each decision = classify(type) + assign(expires_at)"]]
   }</script>
@@ -790,12 +836,13 @@ h2{font-size:64px;margin-bottom:36px}
   </div>
   <aside class="notes">Pause. The next slides turn the intuition into types and selection rules.</aside>
   <script type="application/json" class="trace">{
-    "0":[["composer","render slide 18 · question"]],
+    "0":[["composer","render slide 19 · question"]],
     "1":[["extractor","handoff: human judgement → extraction prompt + 4 memory types","ok"]]
   }</script>
 </section>
 <!-- 19-memory-types.html -->
 <section class="slide s-types" data-title="4 types of long-term memory">
+  <div class="skill-tag" title="Covered by the Memory for AI Applications skill check">SKILL<svg viewBox="0 0 32 32" aria-hidden="true"><rect x="5" y="5" width="22" height="22" rx="3" fill="#001E2B"/><rect x="5" y="5" width="22" height="22" rx="3" fill="#001E2B" transform="rotate(45 16 16)"/><path d="M10.5 16.5l3.8 3.8 7.2-7.6" fill="none" stroke="#F0A6FF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
   <style>
     .s-types .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
     .s-types .t{border:2px solid var(--green);border-radius:4px;padding:20px 26px;min-height:156px;position:relative}
@@ -818,7 +865,7 @@ h2{font-size:64px;margin-bottom:36px}
   <div class="short" data-in="5"><b>Short-term memory</b> is the current conversation. “Lemons tonight”, “I bought a blender” remain there.</div>
   <aside class="notes">One example per type, all from the grocery agent. Short-term memory is just the conversation itself.</aside>
   <script type="application/json" class="trace">{
-    "0":[["composer","render slide 19 · memory taxonomy"]],
+    "0":[["composer","render slide 20 · memory taxonomy"]],
     "1":[["extractor","classify(\"rated matcha 1 star yesterday\") → episodic · occurred_at=2026-11-22"]],
     "2":[["extractor","classify(\"allergic to gluten\") → semantic · direct"],["extractor","generalize(3× \"oat milk\" in cart) → semantic · \"Prefers oat milk.\""]],
     "3":[["extractor","classify(\"deliver Saturday mornings\") → procedural · applies_to: checkout"]],
@@ -858,7 +905,7 @@ h2{font-size:64px;margin-bottom:36px}
   </div>
   <aside class="notes">Four questions the extractor asks before writing anything. Stated facts outrank guesses — store the guess, but flag it.</aside>
   <script type="application/json" class="trace">{
-    "0":[["composer","render slide 20 · selection criteria"]],
+    "0":[["composer","render slide 21 · selection criteria"]],
     "1":[["extractor","check durable: expected_lifetime > 7d ?"]],
     "2":[["extractor","check relevant: matches agent scope \"groceries\" ?"]],
     "3":[["extractor","check confident: LLM score ≥ 0.7 ?"]],
@@ -869,6 +916,7 @@ h2{font-size:64px;margin-bottom:36px}
 </section>
 <!-- 21-implementation.html -->
 <section class="slide s-impl" data-title="Agent Engine implementation">
+  <div class="skill-tag" title="Covered by the Memory for AI Applications skill check">SKILL<svg viewBox="0 0 32 32" aria-hidden="true"><rect x="5" y="5" width="22" height="22" rx="3" fill="#001E2B"/><rect x="5" y="5" width="22" height="22" rx="3" fill="#001E2B" transform="rotate(45 16 16)"/><path d="M10.5 16.5l3.8 3.8 7.2-7.6" fill="none" stroke="#F0A6FF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
   <style>
     .s-impl .bg{font:400 26px var(--display);color:var(--muted);letter-spacing:.5px;text-align:center;margin:0 0 12px;text-transform:uppercase;transition:color .4s}
     .s-impl .bg.lit{color:#fff}
@@ -901,7 +949,7 @@ h2{font-size:64px;margin-bottom:36px}
   <div class="async" data-in="5"><b>Asynchronous:</b> the user never waits for memory to be persisted.</div>
   <aside class="notes">Your code only calls record_turn. Snapshot, extraction and storage happen in the background inside Agent Engine.</aside>
   <script type="application/json" class="trace">{
-    "0":[["composer","render slide 21 · pipeline"]],
+    "0":[["composer","render slide 22 · pipeline"]],
     "1":[["session","record_turn(session_id=\"s-481\", role=\"user\", content=\"I'm allergic to gluten.\") → 12 ms","ok"]],
     "2":[["session","snapshot trigger: 6 messages since last snapshot → enqueue job"]],
     "3":[["extractor","LLM extract(snapshot) → 4 candidates · 2 kept · 2 short-term"]],
@@ -918,7 +966,7 @@ h2{font-size:64px;margin-bottom:36px}
   </div>
   <aside class="notes">Pause on the headline, then the one-sentence summary.</aside>
   <script type="application/json" class="trace">{
-    "0":[["composer","render slide 22 · takeaway 1/3"]],
+    "0":[["composer","render slide 23 · takeaway 1/3"]],
     "1":[["consolidator","persist lesson → {type: \"semantic\", content: \"remember by type and lifetime\"}","ok"],["session","section 01 complete · next: retrieval"]]
   }</script>
 </section>
@@ -930,7 +978,7 @@ h2{font-size:64px;margin-bottom:36px}
   </div>
   <aside class="notes">Section two. We know what to keep — now, out of hundreds of memories, which ones reach the agent?</aside>
   <script type="application/json" class="trace">{
-    "0":[["composer","render slide 23 · section 02 \"The right memory at the right time\""],
+    "0":[["composer","render slide 24 · section 02 \"The right memory at the right time\""],
          ["retriever","warming up · $vectorSearch index memories_vec ready","ok"]]
   }</script>
 </section>
@@ -944,7 +992,7 @@ h2{font-size:64px;margin-bottom:36px}
   </div>
   <aside class="notes">Problem one is done. Click to spotlight problem two: finding the right memory.</aside>
   <script type="application/json" class="trace">{
-    "0":[["composer","render slide 24 · agenda"],["session","progress: problem 1/3 ✓","ok"]],
+    "0":[["composer","render slide 25 · agenda"],["session","progress: problem 1/3 ✓","ok"]],
     "1":[["composer","focus → problem 2: retrieval"]]
   }</script>
 </section>
@@ -1003,7 +1051,7 @@ h2{font-size:64px;margin-bottom:36px}
   };
   </script>
   <script type="application/json" class="trace">{
-    "0":[["composer","render slide 25 · user u_4821 · grocery agent"],["extractor","week 1 · 3 sessions · 8 memories stored"]],
+    "0":[["composer","render slide 26 · user u_4821 · grocery agent"],["extractor","week 1 · 3 sessions · 8 memories stored"]],
     "1":[["extractor","month 1 · 12 sessions · 40 memories"]],
     "2":[["extractor","month 3 · 38 sessions · 150 memories · ~45 tokens each"]],
     "3":[["extractor","month 6 · 412 memories · 18,240 tokens if sent all at once","warn"]]
@@ -1011,6 +1059,7 @@ h2{font-size:64px;margin-bottom:36px}
 </section>
 <!-- 26-send-all.html -->
 <section class="slide s-all" data-title="Send them all?" data-hook="sendAll">
+  <div class="skill-tag" title="Covered by the Memory for AI Applications skill check">SKILL<svg viewBox="0 0 32 32" aria-hidden="true"><rect x="5" y="5" width="22" height="22" rx="3" fill="#001E2B"/><rect x="5" y="5" width="22" height="22" rx="3" fill="#001E2B" transform="rotate(45 16 16)"/><path d="M10.5 16.5l3.8 3.8 7.2-7.6" fill="none" stroke="#F0A6FF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
   <style>
     .s-all .grid{display:grid;grid-template-columns:520px 1fr;gap:56px}
     .s-all .ask{background:var(--green);color:var(--bg);padding:18px 22px;border-radius:4px;font:700 28px/1.25 var(--body)}
@@ -1068,7 +1117,7 @@ h2{font-size:64px;margin-bottom:36px}
   };
   </script>
   <script type="application/json" class="trace">{
-    "0":[["composer","render slide 26 · user has 412 memories after 6 months"]],
+    "0":[["composer","render slide 27 · user has 412 memories after 6 months"]],
     "1":[["retriever","build_context(k=ALL) → 412 memories · 18,240 tokens"],["retriever","est. cost per request ×9.4 vs. top-k","warn"]],
     "2":[["retriever","time-to-first-token 3.8 s (top-k: 0.6 s)","warn"]],
     "3":[["retriever","relevance to \"quick dinner\": 3 of 412 above 0.75"]],
@@ -1109,7 +1158,7 @@ h2{font-size:64px;margin-bottom:36px}
   </div>
   <aside class="notes">Keyword search looks for the word “weekend” — it isn’t there. Semantic search knows Saturday is the weekend.</aside>
   <script type="application/json" class="trace">{
-    "0":[["composer","render slide 27"],["session","user: \"Add something to drink for the weekend.\""]],
+    "0":[["composer","render slide 28"],["session","user: \"Add something to drink for the weekend.\""]],
     "1":[["retriever","$search {text: {query: \"weekend\", path: \"content\"}}"]],
     "2":[["retriever","→ 0 hits · \"weekend\" ∉ any memory","warn"]],
     "3":[["retriever","embed(query) · voyage · 1024 dims"],["retriever","$vectorSearch {index: \"memories_vec\", numCandidates: 200, limit: 5}"]],
@@ -1157,7 +1206,7 @@ h2{font-size:64px;margin-bottom:36px}
   };
   </script>
   <script type="application/json" class="trace">{
-    "0":[["composer","render slide 28"]],
+    "0":[["composer","render slide 29"]],
     "1":[["retriever","embed(\"weekend\") · model voyage · input_type=query"]],
     "2":[["retriever","→ float32[1024] · [0.12, -0.48, 0.91, 0.07, …] · ‖v‖ = 1.00","ok"]],
     "3":[["consolidator","stored on each memory doc as field \"embedding\" · index memories_vec (cosine)"]]
@@ -1206,7 +1255,7 @@ h2{font-size:64px;margin-bottom:36px}
   </div>
   <aside class="notes">Saturday, Sunday and “end of the week” land right next to “weekend”. Matcha, wet grass and dirt are close to each other — and far from the weekend.</aside>
   <script type="application/json" class="trace">{
-    "0":[["composer","render slide 29 · projecting 1024 dims → 2D for display"]],
+    "0":[["composer","render slide 30 · projecting 1024 dims → 2D for display"]],
     "1":[["retriever","plot(\"weekend\") · query vector"]],
     "2":[["retriever","$vectorSearch near \"weekend\" → Saturday 0.94 · Sunday 0.92 · end of the week 0.90","ok"]],
     "3":[["retriever","cosine ≥ 0.85 → same neighborhood"]],
@@ -1249,7 +1298,7 @@ h2{font-size:64px;margin-bottom:36px}
   </div>
   <aside class="notes">Search does its job: three great dinner memories. But look what’s in “left out”…</aside>
   <script type="application/json" class="trace">{
-    "0":[["composer","render slide 30"],["retriever","$vectorSearch(query=\"quick dinner tonight\", numCandidates: 200, limit: 3)"]],
+    "0":[["composer","render slide 31"],["retriever","$vectorSearch(query=\"quick dinner tonight\", numCandidates: 200, limit: 3)"]],
     "1":[["retriever","→ quick meals 0.86 · 20-min stir-fry 0.81 · shop for two 0.77","ok"]],
     "2":[["retriever","not returned: olive oil 0.44 · matcha 0.31 · Saturday delivery 0.29 · gluten allergy 0.12"]],
     "3":[["guard","constraint \"Allergic to gluten\" missing from context","err"]]
@@ -1277,7 +1326,7 @@ h2{font-size:64px;margin-bottom:36px}
   <div class="cap" data-in="3"><b>No shared words. No similar meaning.</b><br>To a search engine, these two have nothing in common.</div>
   <aside class="notes">The most important memory for this request — and search can’t see it. That’s not a bug in search.</aside>
   <script type="application/json" class="trace">{
-    "0":[["composer","render slide 31"]],
+    "0":[["composer","render slide 32"]],
     "1":[["retriever","compare(memory, request)"]],
     "2":[["retriever","keyword overlap: 0 tokens · cosine similarity 0.12","warn"]],
     "3":[["guard","retrieval alone can't surface this constraint","err"]]
@@ -1290,7 +1339,7 @@ h2{font-size:64px;margin-bottom:36px}
   </div>
   <aside class="notes">Pause here. Search ranks by relevance to the request; some memories are important no matter what the request is.</aside>
   <script type="application/json" class="trace">{
-    "0":[["composer","render slide 32"],["guard","rule learned: relevance ≠ importance → pin constraints","warn"]]
+    "0":[["composer","render slide 33"],["guard","rule learned: relevance ≠ importance → pin constraints","warn"]]
   }</script>
 </section>
 <!-- 33-pin-constraints.html -->
@@ -1324,7 +1373,7 @@ h2{font-size:64px;margin-bottom:36px}
   </div>
   <aside class="notes">Two retrievals: a fixed one for constraints that always runs, and semantic search for the rest. Constraints go first and never get truncated.</aside>
   <script type="application/json" class="trace">{
-    "0":[["composer","render slide 33 · assembling prompt"]],
+    "0":[["composer","render slide 34 · assembling prompt"]],
     "1":[["retriever","find({type: \"constraint\", category: {$in: [\"allergy\", \"intolerance\", \"diet\"]}}) → 1 doc"]],
     "2":[["composer","prompt[0] = constraints · \"Allergic to gluten\" · 12 tokens · pinned","ok"]],
     "3":[["retriever","$vectorSearch(\"quick dinner tonight\", limit: 3) → 3 memories · 96 tokens"]],
@@ -1372,7 +1421,7 @@ h2{font-size:64px;margin-bottom:36px}
   </div>
   <aside class="notes">Rank, dedupe, fit the budget — thirty candidates down to two. Then the warning: never let the budget decide whether the allergy makes it in.</aside>
   <script type="application/json" class="trace">{
-    "0":[["composer","render slide 34"],["retriever","$vectorSearch(limit: 30) → 30 candidates · 3,410 tokens"]],
+    "0":[["composer","render slide 35"],["retriever","$vectorSearch(limit: 30) → 30 candidates · 3,410 tokens"]],
     "1":[["retriever","build_context · rank by score × recency × confidence"]],
     "2":[["retriever","build_context · dedupe (sim > 0.95) → 11 merged · 19 left"]],
     "3":[["retriever","build_context · token_budget=400 → 2 memories · 188 tokens","ok"]],
@@ -1388,7 +1437,7 @@ h2{font-size:64px;margin-bottom:36px}
   </div>
   <aside class="notes">Section two in one line. Next: what happens when memories change.</aside>
   <script type="application/json" class="trace">{
-    "0":[["composer","render slide 35 · section 02 summary"]],
+    "0":[["composer","render slide 36 · section 02 summary"]],
     "1":[["extractor","classify(takeaway) → semantic · stated · ttl ∞","ok"],["session","progress: problem 2/3 ✓","ok"]]
   }</script>
 </section>
@@ -1400,7 +1449,7 @@ h2{font-size:64px;margin-bottom:36px}
   </div>
   <aside class="notes">Section three. Memory that never changes goes stale — let’s keep it current and let it go.</aside>
   <script type="application/json" class="trace">{
-    "0":[["composer","render slide 36 · section 03 \"Update and forget\""],
+    "0":[["composer","render slide 37 · section 03 \"Update and forget\""],
          ["consolidator","queue: 3 pending memory updates · 1 expiring · 1 delete request","warn"]]
   }</script>
 </section>
@@ -1414,7 +1463,7 @@ h2{font-size:64px;margin-bottom:36px}
   </div>
   <aside class="notes">Two down, one to go: keeping memory current, and forgetting on purpose.</aside>
   <script type="application/json" class="trace">{
-    "0":[["composer","render slide 37 · agenda · focus=3"],
+    "0":[["composer","render slide 38 · agenda · focus=3"],
          ["session","progress: problem 1 ✓ · problem 2 ✓ · problem 3 in progress","ok"]]
   }</script>
 </section>
@@ -1467,7 +1516,7 @@ h2{font-size:64px;margin-bottom:36px}
   </div>
   <aside class="notes">Both facts are “true” in storage. Without an update step the agent has no idea which one wins.</aside>
   <script type="application/json" class="trace">{
-    "0":[["composer","render slide 38 · consolidation: DISABLED for this example","warn"]],
+    "0":[["composer","render slide 39 · consolidation: DISABLED for this example","warn"]],
     "1":[["extractor","2025-03 · \"I love pasta!\" → semantic · stated · insertOne()"]],
     "2":[["extractor","2026-10 · \"I can't eat gluten anymore.\" → semantic · stated · insertOne()"],["guard","2 memories, both is_latest: true · contradiction not resolved","warn"]],
     "3":[["retriever","$vectorSearch(\"dinner\") → \"Loves pasta.\" 0.82 · \"Can't eat gluten.\" 0.41"],["guard","top result suggests carbonara · contains gluten","err"]],
@@ -1537,7 +1586,7 @@ h2{font-size:64px;margin-bottom:36px}
   </div>
   <aside class="notes">Three decisions the consolidator makes for every new fact. Click 3 floods ten mentions, click 4 collapses them into one stronger memory.</aside>
   <script type="application/json" class="trace">{
-    "0":[["composer","render slide 39 · consolidation: ADD · UPDATE · REINFORCE"]],
+    "0":[["composer","render slide 40 · consolidation: ADD · UPDATE · REINFORCE"]],
     "1":[["consolidator","\"started baking gluten-free bread\" · nearest existing sim 0.31 → ADD","ok"]],
     "2":[["consolidator","\"slow recipes now\" · matches v1 \"quick meals\" sim 0.91 · contradicts → UPDATE"],["consolidator","v1.is_latest=false · v2.previous_version_id=v1","ok"]],
     "3":[["extractor","10 mentions of \"allergic to gluten\" across 10 sessions"]],
@@ -1579,7 +1628,7 @@ h2{font-size:64px;margin-bottom:36px}
   </div>
   <aside class="notes">version · is_latest · previous_version_id · reinforcement_count. Nothing is overwritten — the history stays queryable.</aside>
   <script type="application/json" class="trace">{
-    "0":[["composer","render slide 40"],["retriever","find({topic: \"meal_pace\", is_latest: true}) → 1 doc"]],
+    "0":[["composer","render slide 41"],["retriever","find({topic: \"meal_pace\", is_latest: true}) → 1 doc"]],
     "1":[["extractor","new fact: \"prefers slow recipes\" · semantic · stated"],["consolidator","$vectorSearch existing memories → v1 \"I like quick meals.\" · sim 0.91"]],
     "2":[["consolidator","decision: UPDATE (contradicts v1)"],["consolidator","updateOne(v1, {$set: {is_latest: false}}) · insertOne(v2)","ok"]],
     "3":[["consolidator","decision: REINFORCE v2 · $inc reinforcement_count → 2 · no new doc","ok"]]
@@ -1653,7 +1702,7 @@ h2{font-size:64px;margin-bottom:36px}
   };
   </script>
   <script type="application/json" class="trace">{
-    "0":[["composer","render slide 41 · lifecycle: expire + delete"]],
+    "0":[["composer","render slide 42 · lifecycle: expire + delete"]],
     "1":[["extractor","\"hosting friends Saturday\" → episodic · expires_at = event + 1d"],["consolidator","insertOne · TTL index on expires_at (expireAfterSeconds: 0)"]],
     "2":[["session","⏩ fast-forward 5 days"],["consolidator","TTL monitor: removed 1 expired memory · no app code","ok"]],
     "3":[["session","user: \"Please forget my old address.\""],["extractor","intent: FORGET · topic=address · 2 versions found","warn"]],
@@ -1669,7 +1718,7 @@ h2{font-size:64px;margin-bottom:36px}
   </div>
   <aside class="notes">One line to remember from section three.</aside>
   <script type="application/json" class="trace">{
-    "0":[["composer","render slide 42 · section 03 takeaway"],
+    "0":[["composer","render slide 43 · section 03 takeaway"],
          ["consolidator","lifecycle ops this session: ADD 1 · UPDATE 1 · REINFORCE 10 · EXPIRE 1 · DELETE 2","ok"]]
   }</script>
 </section>
@@ -1690,7 +1739,7 @@ h2{font-size:64px;margin-bottom:36px}
   </div>
   <aside class="notes">One click per answer, then all three together.</aside>
   <script type="application/json" class="trace">{
-    "0":[["composer","render slide 43 · recap"]],
+    "0":[["composer","render slide 44 · recap"]],
     "1":[["extractor","answer 1 · record_turn → snapshot → extract by type · async","ok"]],
     "2":[["retriever","answer 2 · $vectorSearch / hybrid ($rankFusion) + pinned constraints","ok"]],
     "3":[["consolidator","answer 3 · ADD/UPDATE/REINFORCE · is_latest · TTL · deleteMany","ok"]],
@@ -1720,7 +1769,7 @@ h2{font-size:64px;margin-bottom:36px}
   </div>
   <aside class="notes">Slow down here. Three lines, one per section — then leave the QR up.</aside>
   <script type="application/json" class="trace">{
-    "0":[["composer","render slide 44 · closing"]],
+    "0":[["composer","render slide 45 · closing"]],
     "1":[["extractor","what matters → durable, relevant, stated","ok"]],
     "2":[["retriever","the right moment → search by meaning + pinned constraints","ok"]],
     "3":[["consolidator","when to forget → TTL + explicit delete","ok"]],
@@ -1751,10 +1800,33 @@ h2{font-size:64px;margin-bottom:36px}
   </div>
   <aside class="notes">Thank you. This one never expires.</aside>
   <script type="application/json" class="trace">{
-    "0":[["composer","render slide 45 · final slide"]],
+    "0":[["composer","render slide 46 · final slide"]],
     "1":[["session","record_turn(speaker, \"thank you, re:Invent!\")"],["extractor","classify → episodic · stated · conf 0.99 · keep forever"]],
     "2":[["consolidator","insertOne(memories) → acknowledged · expires_at: null","ok"],["session","session reinvent-2026 closed · 1 memory kept","ok"]]
   }</script>
+</section>
+<!-- 46-skill-check.html -->
+<section class="slide s-skill no-trace" data-title="Skill check">
+  <style>
+    .s-skill{padding:0}
+    .s-skill .right{position:absolute;left:800px;top:0;right:0;bottom:0;background:var(--green);color:var(--bg)}
+    .s-skill .badge{position:absolute;left:165px;top:190px;width:464px;height:461px}
+    .s-skill h1{position:absolute;left:132px;top:100px;font:400 190px/.8 var(--display);color:var(--bg);text-transform:uppercase}
+    .s-skill .qr{position:absolute;left:132px;top:420px;width:250px;height:250px;background:#fff;border-radius:4px;padding:8px}
+    .s-skill .link{position:absolute;left:420px;top:440px;font:600 29px/1.3 var(--mono);color:var(--bg)}
+    .s-skill .link b{display:block;font:400 54px/1 var(--display);text-transform:uppercase;margin-bottom:14px}
+    .s-skill .link a{color:#6B1A86;text-decoration:none;border-bottom:4px solid #6B1A86}
+    .s-skill .q{position:absolute;left:132px;top:716px;font:600 30px/1.45 var(--body)}
+    .s-skill .q b{font:700 38px var(--body);display:block}
+  </style>
+  <img class="badge" src="assets/skill-badge.png" alt="MongoDB Skill: Memory for AI Applications" data-in="0">
+  <div class="right">
+    <h1 class="build">Skill check</h1>
+    <img class="qr" data-in="1" src="assets/qr-badge.png" alt="QR code for mdb.link/memory-bdg">
+    <div class="link" data-in="1"><b>Claim your badge</b><a href="https://mdb.link/memory-bdg">mdb.link/memory-bdg</a></div>
+    <div class="q" data-in="2"><b>Questions?</b>Ask your neighbor<br>Raise your hand</div>
+  </div>
+  <aside class="notes">Scan the QR or open mdb.link/memory-bdg to take the Memory for AI Applications skill check and claim the badge. Then questions.</aside>
 </section>
 
   <div id="trace"><span class="hdr">AGENT TRACE · Atlas Agent Engine</span></div>
@@ -1824,6 +1896,7 @@ h2{font-size:64px;margin-bottom:36px}
     traceEl.style.display = s.classList.contains('no-trace') ? 'none' : '';
     document.getElementById('footer').style.display = s.classList.contains('no-footer') ? 'none' : '';
     statusEl.style.display = s.classList.contains('no-trace') ? 'none' : '';
+    statusEl.style.right = s.querySelector('.skill-tag') ? '250px' : '';
     const tr = traceOf(s); const fresh = []; let i = cur * 12;
     Object.keys(tr).map(Number).sort((a,b)=>a-b).filter(k => k <= upto).forEach(k => {
       tr[k].forEach(([agent, msg, kind]) => {

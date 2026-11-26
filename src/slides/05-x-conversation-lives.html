@@ -1,0 +1,40 @@
+<section class="slide s-stm" data-title="Where does the conversation live?">
+  <div class="skill-tag" title="Covered by the Memory for AI Applications skill check">SKILL<svg viewBox="0 0 32 32" aria-hidden="true"><rect x="5" y="5" width="22" height="22" rx="3" fill="#001E2B"/><rect x="5" y="5" width="22" height="22" rx="3" fill="#001E2B" transform="rotate(45 16 16)"/><path d="M10.5 16.5l3.8 3.8 7.2-7.6" fill="none" stroke="#F0A6FF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+  <style>
+    .s-stm .sub{font-size:30px;margin:10px 0 22px 14px}
+    .s-stm .wrap{display:grid;grid-template-columns:808px 1fr;gap:48px;align-items:stretch}
+    .s-stm .doc{font-size:26px;min-height:430px;padding:30px 40px;line-height:1.28}
+    .s-stm .notes-col{display:flex;flex-direction:column;justify-content:space-between;padding:6px 0}
+    .s-stm .nt{border-left:8px solid var(--green);padding:6px 0 6px 32px;font:700 32px/1.15 var(--body)}
+    .s-stm .nt code{display:block;font:600 36px var(--mono);color:var(--green);margin-bottom:6px}
+    .s-stm .nt.two{border-color:var(--purple)} .s-stm .nt.two code{color:var(--purple)}
+    .s-stm .nt.three{border-color:#fff} .s-stm .nt.three code{color:#fff}
+  </style>
+  <h2 class="build">Where does the conversation live?</h2>
+  <p class="sub" data-in="1">Short-term memory: one document per conversation.</p>
+  <div class="wrap">
+    <div class="doc" data-in="1"><span class="lbl">sessions</span>{
+  <span class="k">"user_id"</span>: <span class="s">"shopper-42"</span>,
+  <span class="k">"session_id"</span>: <span class="b">"session-987"</span>,
+  <span class="k">"history"</span>: [
+    { <span class="k">"role"</span>: <span class="s">"user"</span>,
+      <span class="k">"content"</span>: <span class="s">"I'm allergic to gluten."</span> },
+    { <span class="k">"role"</span>: <span class="s">"agent"</span>,
+      <span class="k">"content"</span>: <span class="s">"I'll keep that in mind."</span> }
+  ]
+}</div>
+    <div class="notes-col">
+      <div class="nt" data-in="2"><code>user_id</code>Whose memory it is.</div>
+      <div class="nt two" data-in="3"><code>session_id</code>Which conversation.</div>
+      <div class="nt three" data-in="4"><code>history</code>The conversation, in order.</div>
+    </div>
+  </div>
+  <aside class="notes">Short-term memory is simply the conversation stored as one document per session. Walk the three fields: whose, which, and the ordered history.</aside>
+  <script type="application/json" class="trace">{
+    "0":[["composer","render slide 06 · short-term memory"]],
+    "1":[["session","insertOne(sessions) · one document per conversation","ok"]],
+    "2":[["session","user_id = shopper-42 · scopes memory to one person"]],
+    "3":[["session","session_id = session-987 · scopes to one conversation"]],
+    "4":[["session","history[] appended in order · 2 messages","ok"]]
+  }</script>
+</section>
